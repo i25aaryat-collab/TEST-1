@@ -29,6 +29,9 @@ foreach (explode(',', DB_HOST) as $host) {          // try each host until one a
         ]);
         break;
     } catch (PDOException $e) {
+        // Keep diagnostics in Vercel's private runtime logs; never show the
+        // underlying exception to a visitor because it may reveal infrastructure details.
+        error_log('Database connection attempt failed (' . DB_DRIVER . '): ' . $e->getMessage());
         $pdo = null;
     }
 }
@@ -36,9 +39,8 @@ foreach (explode(',', DB_HOST) as $host) {          // try each host until one a
 if (!$pdo) {
     // Never show the raw error (it can leak the password or server name).
     http_response_code(500);
-    exit('<h2 style="font-family:sans-serif">Database connection failed.</h2>'
-       . '<p style="font-family:sans-serif">Check that MySQL is running in XAMPP '
-       . 'and that the settings in <code>config/config.php</code> are correct.</p>');
+    exit('<h2 style="font-family:sans-serif">The site is temporarily unavailable.</h2>'
+       . '<p style="font-family:sans-serif">Please try again shortly.</p>');
 }
 
 // Store and show times in Indian Standard Time, whatever the server's zone is.
