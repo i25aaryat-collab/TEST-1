@@ -1,0 +1,9 @@
+{
+  "name": "RoomieMatch",
+  "image": "mcr.microsoft.com/devcontainers/base:noble",
+  "postStartCommand": "bash start-codespace.sh",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "RoomieMatch website", "onAutoForward": "openBrowser" }
+  }
+}
