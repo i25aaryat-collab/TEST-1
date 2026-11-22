@@ -1,0 +1,6 @@
+# Uploaded photos are shown as images only.
+# Refuse to run any script someone manages to upload here.
+<FilesMatch "\.(php|phtml|phar|php\d|pl|py|cgi|sh|js|html?)$">
+    Require all denied
+</FilesMatch>
+Options -Indexes
