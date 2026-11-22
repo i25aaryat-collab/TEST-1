@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="deal"><rect width="240" height="160" rx="20" fill="#E4E8FF"/>
+    <g><animateTransform attributeName="transform" type="scale" values="1.6;1;1;1" keyTimes="0;0.2;0.8;1" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+    <animateTransform attributeName="transform" type="translate" values="-72 -48;0 0;0 0;0 0" keyTimes="0;0.2;0.8;1" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+    <g transform="rotate(-12 120 80)"><rect x="40" y="48" width="160" height="64" rx="12" fill="none" stroke="#FF5A5F" stroke-width="7"/>
+    <text x="120" y="100" text-anchor="middle" font-family="Arial Black, Arial" font-weight="900" font-size="44" fill="#FF5A5F">DEAL!</text></g></g></svg>

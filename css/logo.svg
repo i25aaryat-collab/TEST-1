@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- RoomieMatch logo: a house whose door is a heart -->
+  <rect width="64" height="64" rx="16" fill="#FF5A5F"/>
+  <path d="M32 13 12 29.5V51h40V29.5Z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 46.5s-9.5-5.6-9.5-12a5.3 5.3 0 0 1 9.5-3.2 5.3 5.3 0 0 1 9.5 3.2c0 6.4-9.5 12-9.5 12Z" fill="#FF5A5F"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Shown when a user has not uploaded a photo -->
+  <rect width="200" height="200" fill="#FFE3E4"/>
+  <circle cx="100" cy="80" r="36" fill="#FF9A9D"/>
+  <path d="M30 200c4-44 34-68 70-68s66 24 70 68Z" fill="#FF9A9D"/>
+</svg>
