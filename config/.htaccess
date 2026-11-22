@@ -1,0 +1,3 @@
+# Block browsers from opening anything in config/ directly.
+# PHP can still include these files; only web requests are refused.
+Require all denied
