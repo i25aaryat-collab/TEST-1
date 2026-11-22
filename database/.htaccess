@@ -1,0 +1,2 @@
+# The SQL files should never be downloadable from the website.
+Require all denied
