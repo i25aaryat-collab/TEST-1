@@ -168,8 +168,9 @@ require __DIR__ . '/../includes/header.php';
                                 <div class="muted small">has a room to share</div></div>
                             <?php if ($l['result']): ?><span class="poster-score <?= score_class($l['result']['score']) ?>" title="Your score with <?= e(explode(' ', $l['owner'])[0]) ?>"><?= $l['result']['score'] === null ? '–' : $l['result']['score'] . '%' ?></span><?php endif; ?>
                     </div><?php endif; ?>
-                    <a class="listing-photo" data-fallback="<?= e(house_icon()) ?>" href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>" tabindex="-1" aria-hidden="true">
-                        <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML=this.parentNode.dataset.fallback"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><?= house_icon() ?><?php endif; ?>
+                    <?php $nophoto = '<span class="no-photo"><img class="avatar" src="' . e(photo_url($l['owner_photo'])) . '" alt=""><span>' . e(explode(' ', $l['owner'])[0]) . ' hasn\'t added room photos yet</span></span>'; ?>
+                    <a class="listing-photo" data-fallback="<?= e($nophoto) ?>" href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>" tabindex="-1" aria-hidden="true">
+                        <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.innerHTML=this.parentNode.dataset.fallback"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><?= $nophoto ?><?php endif; ?>
                     </a>
                     <div class="body">
                         <div class="listing-price"><?= $l['rent'] ? e(rupees((int) $l['rent'])) . '<small>/month</small>' : 'Rent on request' ?></div>

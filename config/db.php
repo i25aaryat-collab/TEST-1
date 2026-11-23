@@ -17,7 +17,7 @@ $pdo = null;
 foreach (explode(',', DB_HOST) as $host) {          // try each host until one answers
     try {
         $dsn = DB_DRIVER === 'pgsql'
-            ? 'pgsql:host=' . trim($host) . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';sslmode=' . (getenv('DB_SSLMODE') ?: 'prefer')
+            ? 'pgsql:host=' . trim($host) . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';sslmode=' . (getenv('DB_SSLMODE') ?: 'prefer') . ';connect_timeout=4'   // pgsql ignores ATTR_TIMEOUT: without this a dead host stalls the page for minutes
             : 'mysql:host=' . trim($host) . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
         $pdo = new PDO($dsn, DB_USER, DB_PASS, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // errors throw exceptions
