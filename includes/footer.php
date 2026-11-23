@@ -37,15 +37,23 @@
 </script>
 <?php if (is_logged_in() && !is_admin()): ?>
 <script>
-    // Keep the red badges (unread chats, waiting requests) up to date every 5 seconds
+    // Refresh badges periodically, pause in hidden tabs, and avoid overlapping requests.
     (function () {
         const url = <?= json_encode(url('chat/unread.php')) ?>;
+        let inFlight = false;
         function refresh() {
-            fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-                RM.setBadge('chats', d.unread); RM.setBadge('requests', d.requests);
-            }).catch(function () {});
+            if (document.hidden || inFlight) return;
+            inFlight = true;
+            fetch(url, { cache: 'no-store' })
+                .then(function (r) { if (!r.ok) throw new Error('Badge request failed'); return r.json(); })
+                .then(function (d) {
+                    RM.setBadge('chats', d.unread); RM.setBadge('requests', d.requests);
+                })
+                .catch(function () {})
+                .finally(function () { inFlight = false; });
         }
-        setInterval(refresh, 5000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+        setInterval(refresh, 30000);
     })();
 </script>
 <?php endif; ?>

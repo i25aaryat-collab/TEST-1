@@ -57,6 +57,19 @@ function mark_read(PDO $pdo, int $matchId, int $myId): void
         ->execute([$matchId, $myId]);
 }
 
+/** Both navigation badge counts in one database round trip. */
+function notification_counts(PDO $pdo, int $myId): array
+{
+    $stmt = $pdo->prepare("SELECT
+        (SELECT COUNT(*) FROM messages msg JOIN matches m ON m.id = msg.match_id
+         WHERE (m.user1_id = ? OR m.user2_id = ?) AND msg.sender_id <> ? AND msg.read_at IS NULL) AS unread,
+        (SELECT COUNT(*) FROM swipes WHERE swiped_id = ? AND direction = 'like'
+         AND swiper_id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ?)) AS requests");
+    $stmt->execute([$myId, $myId, $myId, $myId, $myId]);
+    $counts = $stmt->fetch() ?: ['unread' => 0, 'requests' => 0];
+    return ['unread' => (int) $counts['unread'], 'requests' => (int) $counts['requests']];
+}
+
 /** Unread messages for me across all my matches (the red badge on "Chats") */
 function unread_count(PDO $pdo, int $myId): int
 {

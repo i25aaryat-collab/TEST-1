@@ -30,8 +30,9 @@ function nav_link(string $path, string $label, string $current, string $badge = 
 // Red badges: unread messages and requests waiting (kept fresh by footer.php)
 $unread = $requestsWaiting = 0;
 if (is_logged_in() && !is_admin() && isset($pdo)) {
-    $unread = unread_count($pdo, (int) $_SESSION['user_id']);
-    $requestsWaiting = pending_requests($pdo, (int) $_SESSION['user_id']);
+    $notificationCounts = notification_counts($pdo, (int) $_SESSION['user_id']);
+    $unread = $notificationCounts['unread'];
+    $requestsWaiting = $notificationCounts['requests'];
 }
 ?>
 <!DOCTYPE html>
