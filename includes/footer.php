@@ -11,8 +11,7 @@
 
 <footer class="site-footer">
     <div class="container footer-inner">
-        <p><strong>RoomieMatch</strong> · Find a flatmate you actually get along with.</p>
-        <p class="muted">Built with PHP, MySQL and vanilla JavaScript · Character clips generated with Kling AI · Web Development project, IPM, IIM Indore</p>
+        <p class="muted">© <?= date('Y') ?> RoomieMatch. All rights reserved.</p>
     </div>
 </footer>
 

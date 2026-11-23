@@ -4,7 +4,7 @@
  * --------------------------------------------------------------------------
  * Landing page, told as a story while you scroll:
  *   1. Hero: a crowd of characters that turn to face your cursor
- *   2. Story: a bad flatmate match, told in four beats as you scroll
+ *   2. Story: a quiet building lights up window by window, then we step inside (js/home-story.js)
  *   3. Five features, each revealed with its own small animation
  *   4. Call to action
  * The animation code is in js/landing.js; all of it switches off for
@@ -74,31 +74,29 @@ function clip(string $id, string $class = ''): string
             <div class="crowd-tile crowd-score" style="--i: 11"><?= score_ring(94) ?><small>Sunny + Meher</small></div>
         </div>
     </div>
-    <a class="scroll-cue" href="#story" aria-label="Scroll to the story"><span></span></a>
+    <a class="scroll-cue" href="#find-your-people" aria-label="Scroll to the story"><span></span></a>
 </section>
 
-<!-- ========== 2. The story (pinned while you scroll) ========== -->
-<section class="story" id="story" aria-label="Why RoomieMatch">
-    <div class="story-stage" data-beat="0">
-        <div class="story-text container">
-            <p class="beat" data-show="0"><span class="beat-no">01</span>Meet Sunny. In bed by 10, kitchen spotless.</p>
-            <p class="beat" data-show="1"><span class="beat-no">02</span>Sunny's last flatmate: guitar at 3 AM, dishes left for a week.</p>
-            <p class="beat" data-show="2"><span class="beat-no">03</span>Nobody was wrong. They just never compared notes.</p>
-            <p class="beat" data-show="3"><span class="beat-no">04</span>RoomieMatch compares seven things before you ever meet.</p>
-        </div>
-        <div class="story-scene" aria-hidden="true">
-            <div class="actor actor-a"><?= clip('v03') ?><span class="actor-tag">Sunny · 10 PM · Very tidy</span></div>
-            <div class="actor actor-b"><?= clip('v02') ?><span class="actor-tag">Night owl · 3 AM · Untidy</span></div>
-            <div class="actor actor-c"><?= clip('v05') ?><span class="actor-tag">Meher · 10 PM · Tidy</span></div>
-            <div class="clash">⚡</div>
-            <div class="story-score"><?= score_ring(94) ?></div>
-            <div class="story-checks">
-                <?php foreach (['Budget', 'Bedtime', 'Tidiness', 'Smoking', 'Drinking', 'Pets', 'Languages'] as $k => $f): ?>
-                    <span style="--k: <?= $k ?>">✓ <?= $f ?></span>
+<!-- ========== 2. Find your people (pinned while you scroll; js/home-story.js) ========== -->
+<section class="fyp" id="find-your-people" aria-label="Find your people" data-base="<?= e(url('media/story/')) ?>">
+    <div class="fyp-view">
+        <div class="fyp-backdrop" aria-hidden="true"></div>
+        <div class="fyp-stage"></div>
+        <div class="fyp-veil" aria-hidden="true"></div>
+        <div class="fyp-room">
+            <div class="fyp-shot">
+                <?php foreach (['room.jpg' => 'Flatmates hanging out in their living room', 'room2.jpg' => 'Friends sharing popcorn on the sofa', 'room3.jpg' => 'A sleepover under paper bunting', 'room4.jpg' => 'Friends talking around a coffee table', 'room5.jpg' => 'Flatmates laughing on the living-room floor', 'room6.jpg' => 'Late-night chai and giggles on the bed'] as $i => $alt): ?>
+                    <img class="fyp-slide<?= $i === 'room.jpg' ? ' on' : '' ?>" src="<?= e(url('media/story/' . $i)) ?>" alt="<?= e($alt) ?>" loading="lazy" decoding="async">
                 <?php endforeach; ?>
+                <div class="fyp-scrim"></div>
             </div>
+            <div class="fyp-copy">
+                <h2>Don’t just find a room. <em>Find your people.</em></h2>
+                <p>Find people who share your vibe, your interests and your idea of home.</p>
+                <a class="btn btn-primary btn-lg" href="<?= e($ctaUrl) ?>"><?= e($ctaText) ?></a>
+            </div>
+            <div class="fyp-dots" role="group" aria-label="Choose a photo"></div>
         </div>
-        <div class="story-progress" aria-hidden="true"><i></i></div>
     </div>
 </section>
 
@@ -199,7 +197,7 @@ function clip(string $id, string $class = ''): string
 </section>
 
 <?php
-$extraScripts = '<script src="' . e(url('js/characters.js')) . '"></script><script src="' . e(url('js/landing.js')) . '?v=2"></script>'
+$extraScripts = '<script src="' . e(url('js/characters.js')) . '"></script><script src="' . e(url('js/landing.js')) . '?v=3"></script><script src="' . e(url('js/home-story.js')) . '?v=1"></script>'
   . '<script>document.querySelectorAll(".look-face").forEach(function(el){el.innerHTML=rmCharacterSVG(RM_CHARACTERS[+el.dataset.char],{x:0,y:0},true)});'
   . 'addEventListener("pointermove",function(e){document.querySelectorAll(".look-face svg").forEach(function(s){var r=s.getBoundingClientRect();rmLook(s,(e.clientX-r.left-r.width/2)/innerWidth*3,(e.clientY-r.top-r.height/2)/innerHeight*3)})});</script>';
 require __DIR__ . '/includes/footer.php';

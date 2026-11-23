@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------------
  * Animations for the landing page (index.php):
  *   1. The crowd: each character tile turns in 3D to face the cursor
- *   2. The story: a section pinned while you scroll, moving through 4 beats
+ *   2. (The pinned story is in js/home-story.js)
  *   3. Reveals: features animate in when they scroll into view
  *   4. Counters: the hero numbers count up once
  * People who ask their device for reduced motion get a still page.
@@ -50,27 +50,7 @@
         videos.forEach(function (v) { vo.observe(v); });
     }
 
-    // ---------- 2. The pinned story ----------
-    const story = document.querySelector('.story');
-    const stage = story && story.querySelector('.story-stage');
-    const bar = story && story.querySelector('.story-progress i');
-    function onScroll() {
-        if (!story) return;
-        const r = story.getBoundingClientRect();
-        const total = story.offsetHeight - window.innerHeight;
-        const p = Math.max(0, Math.min(1, -r.top / total));          // 0 at the start, 1 at the end
-        const beat = Math.min(3, Math.floor(p * 4));
-        if (stage.dataset.beat !== String(beat)) stage.dataset.beat = beat;
-        bar.style.transform = 'scaleX(' + p.toFixed(3) + ')';
-    }
-    if (story) {
-        if (reduced) {
-            stage.dataset.beat = 3;
-        } else {
-            window.addEventListener('scroll', onScroll, { passive: true });
-            onScroll();
-        }
-    }
+    // ---------- 2. The pinned story now lives in js/home-story.js ----------
 
     // ---------- 3. Reveal features as they scroll in ----------
     const reveals = document.querySelectorAll('.reveal');

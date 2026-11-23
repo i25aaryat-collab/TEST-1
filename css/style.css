@@ -436,40 +436,35 @@ table.data tbody tr:hover { background: var(--bg); }
 @keyframes cue { 0% { opacity: 0; transform: translateY(0); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
 
 /* The story: the section is 4 screens tall; its stage stays pinned while you scroll */
-.story { height: 400vh; position: relative; background: var(--navy); color: #fff; }
-.story-stage { position: sticky; top: 64px; height: calc(100vh - 64px); overflow: hidden; display: grid; grid-template-rows: auto 1fr; }
-.story-text { position: relative; min-height: 130px; padding-top: 36px; }
-.beat { position: absolute; left: 16px; right: 16px; margin: 0; font-size: clamp(1.4rem, 3.6vw, 2.5rem); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em;
-        opacity: 0; transform: translateY(30px); transition: opacity .5s, transform .6s var(--ease-out); }
-.beat-no { display: block; font-size: .9rem; color: var(--coral); letter-spacing: .1em; margin-bottom: 6px; }
-.story-stage[data-beat="0"] .beat[data-show="0"], .story-stage[data-beat="1"] .beat[data-show="1"],
-.story-stage[data-beat="2"] .beat[data-show="2"], .story-stage[data-beat="3"] .beat[data-show="3"] { opacity: 1; transform: none; }
-.story-scene { position: relative; max-width: 900px; width: 100%; margin: 0 auto; }
-.actor { position: absolute; top: 12%; width: min(30vw, 230px); transition: transform .8s var(--bounce), opacity .5s; }
-.actor video { width: 100%; aspect-ratio: 1; border-radius: 26px; object-fit: cover; box-shadow: 0 20px 50px rgba(0, 0, 0, .35); background: #DADCE6; }
-.actor-tag { display: block; margin-top: 10px; text-align: center; font-weight: 700; font-size: .85rem; color: #C8CAD9; }
-.actor-a { left: 8%; }
-.actor-b, .actor-c { right: 8%; opacity: 0; transform: translateX(60px) rotate(6deg); }
-.clash, .story-score { position: absolute; left: 50%; top: 26%; transform: translate(-50%, 0) scale(0); transition: transform .6s var(--bounce); }
-.clash { font-size: 4rem; }
-.story-score .score-ring { width: 110px; height: 110px; }
-.story-score .score-ring span { color: #fff; font-size: 1.6rem; }
-.story-score .track { stroke: rgba(255, 255, 255, .15); }
-.story-checks { position: absolute; left: 0; right: 0; top: 66%; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0 16px; }
-.story-checks span { padding: 6px 12px; border-radius: 99px; background: rgba(43, 182, 115, .18); color: #7FE3B0; font-weight: 700; font-size: .85rem;
-                     opacity: 0; transform: translateY(12px); transition: opacity .4s, transform .5s var(--bounce); transition-delay: calc(var(--k) * 70ms); }
-/* beat 1: the night owl arrives; beat 2: they clash; beat 3: a better match + the 7 checks */
-.story-stage[data-beat="1"] .actor-b, .story-stage[data-beat="2"] .actor-b { opacity: 1; transform: none; }
-.story-stage[data-beat="2"] .clash { transform: translate(-50%, 0) scale(1); animation: shake .4s infinite; }
-.story-stage[data-beat="2"] .actor-a { transform: rotate(-6deg) translateX(-14px); }
-.story-stage[data-beat="2"] .actor-b { transform: rotate(6deg) translateX(14px); }
-.story-stage[data-beat="3"] .actor-c { opacity: 1; transform: none; }
-.story-stage[data-beat="3"] .story-score { transform: translate(-50%, 0) scale(1); }
-.story-stage[data-beat="3"] .story-checks span { opacity: 1; transform: none; }
-.story-stage .story-score .bar { animation: none; stroke-dashoffset: 100; transition: stroke-dashoffset 1.2s var(--ease-out) .3s; }
-.story-stage[data-beat="3"] .story-score .bar { stroke-dashoffset: calc(100 - var(--p)); }
-.story-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, .1); }
-.story-progress i { display: block; height: 100%; background: var(--coral); transform-origin: left; transform: scaleX(0); }
+/* "Find your people": pinned scroll story (js/home-story.js) */
+.fyp { height: 320vh; position: relative; background: #0b0a0c; }
+.fyp-view { position: sticky; top: 64px; height: calc(100vh - 64px); height: calc(100svh - 64px); overflow: hidden; }
+.fyp-backdrop { position: absolute; inset: -8%; background: center / cover no-repeat; filter: blur(38px) brightness(.55) saturate(1.1); transform: scale(1.1); }
+.fyp-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.fyp-stage img { display: block; width: 100%; height: 100%; user-select: none; }
+.fyp-win { position: absolute; opacity: 0; background-repeat: no-repeat; will-change: opacity; }
+.fyp-veil { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at var(--vx, 50%) var(--vy, 50%), transparent 0, transparent var(--vr, 10%), rgba(10, 8, 12, .7) calc(var(--vr, 10%) * 2.6)); }
+.fyp-room { position: absolute; inset: 0; visibility: hidden; clip-path: inset(50%); }
+.fyp-shot { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform, opacity; }
+.fyp-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; opacity: 0; transition: opacity 1.4s ease; }
+.fyp-shot img.on { opacity: 1; }
+.fyp-inside .fyp-shot img.on { animation: fyp-drift 7s ease-out both; }
+@keyframes fyp-drift { from { transform: scale(1.07); } to { transform: scale(1); } }
+.fyp-dots { position: absolute; right: max(6vw, 20px); bottom: clamp(40px, 9vh, 104px); display: flex; gap: 4px; opacity: 0; transition: opacity .6s; }
+.fyp-inside .fyp-dots { opacity: 1; }
+.fyp-dots button { width: 28px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.fyp-dots button::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: rgba(251, 246, 238, .45); transition: width .3s, background .3s; }
+.fyp-dots button[aria-current="true"]::after { width: 22px; border-radius: 4px; background: #fbf6ee; }
+.fyp-dots button:focus-visible { outline: 2px solid #fbf6ee; border-radius: 6px; }
+@media (max-width: 600px) { .fyp-dots { left: max(6vw, 20px); right: auto; bottom: 14px; } .fyp-copy { bottom: 54px; } }
+.fyp-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10, 8, 10, .8) 0, rgba(10, 8, 10, .25) 40%, transparent 62%); }
+.fyp-copy { position: absolute; left: max(6vw, 20px); right: max(6vw, 20px); bottom: clamp(32px, 9vh, 96px); max-width: 640px; color: #fbf6ee; }
+.fyp-copy > * { opacity: 0; }
+.fyp-copy h2 { font-size: clamp(2rem, 5.2vw, 3.6rem); line-height: 1.05; margin: 0 0 14px; color: #fbf6ee; text-wrap: balance; }
+.fyp-copy h2 em { font-style: italic; font-weight: 500; }
+.fyp-copy p { margin: 0 0 24px; font-size: 1.05rem; opacity: .9; max-width: 34em; }
+.fyp:not(.fyp-inside) .fyp-copy a { pointer-events: none; }
 @keyframes shake { 0%, 100% { margin-left: 0; } 25% { margin-left: -4px; } 75% { margin-left: 4px; } }
 
 /* Features: copy + a small live demo, alternating sides */
@@ -576,7 +571,7 @@ table.data tbody tr:hover { background: var(--bg); }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .js-anim .reveal .feature-copy, .js-anim .reveal .feature-demo, .js-anim .section.reveal, .js-anim .reveal .demo-row,
-    .js-anim .reveal .demo-room, .js-anim .reveal .demo-chat > *, .beat, .story-checks span { opacity: 1 !important; transform: none !important; }
+    .js-anim .reveal .demo-room, .js-anim .reveal .demo-chat > * { opacity: 1 !important; transform: none !important; }
 }
 
 /* ---------- 15. Added components (badges, toasts, pickers, chat extras, listings, moderation) ---------- */
