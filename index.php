@@ -43,7 +43,7 @@ require __DIR__ . '/includes/header.php';
 function clip(string $id, string $class = ''): string
 {
     return '<video class="' . $class . '" src="' . e(url('media/characters/' . $id . '.mp4')) . '" poster="' . e(url('media/characters/' . $id . '.jpg'))
-         . '" muted loop playsinline autoplay preload="metadata" aria-hidden="true"></video>';
+         . '" muted loop playsinline autoplay preload="metadata" disablepictureinpicture disableremoteplayback aria-hidden="true" tabindex="-1"></video>';
 }
 ?>
 

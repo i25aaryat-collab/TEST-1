@@ -66,6 +66,7 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
         <div class="nav-links" id="nav-links">
             <?php if (!is_logged_in()): ?>
                 <?= nav_link('listings/index.php', 'Flats', $current) ?>
+                <?= nav_link('map.php', 'Map', $current) ?>
                 <?= nav_link('auth/login.php', 'Log in', $current) ?>
                 <a class="btn btn-primary btn-sm" href="<?= e(url('auth/register.php')) ?>">Sign up free</a>
             <?php elseif (is_admin()): ?>
@@ -78,6 +79,7 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
                 <?= nav_link('swipe/matches.php', 'Matches', $current, 'requests', $requestsWaiting) ?>
                 <?= nav_link('chat/inbox.php', 'Chats', $current, 'chats', $unread) ?>
                 <?= nav_link('listings/index.php', 'Flats', $current) ?>
+                <?= nav_link('map.php', 'Map', $current) ?>
                 <?= nav_link('communities/index.php', 'Communities', $current) ?>
                 <?= nav_link('profile/view_profile.php', 'My profile', $current) ?>
                 <a class="btn btn-outline btn-sm" href="<?= e(url('auth/logout.php')) ?>">Log out</a>

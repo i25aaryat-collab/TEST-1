@@ -1,10 +1,9 @@
 /* ==========================================================================
  * js/auth-stage.js  —  Owner: M2 (Authentication)
  * Brings the login/register characters to life:
- *   - eyes follow the mouse, and the text cursor while you type
- *   - hands cover the eyes while the password box is focused
- *   - one character peeks when the password is shown
- *   - a jump when the form is sent, a head-shake on an error
+ *   - the characters stay still
+ *   - a blindfold slides over their eyes while the password box is focused
+ *   - one of them lifts it to peek when the password is shown
  * ========================================================================== */
 (function () {
     const stage = document.querySelector('.auth-stage');
@@ -19,33 +18,9 @@
         return { el: el, svg: el.querySelector('svg') };
     });
 
-    // Look at a point on the screen
-    let target = null, frame = 0;
-    function lookAt(x, y) {
-        target = { x: x, y: y };
-        if (!frame) frame = requestAnimationFrame(function () {
-            frame = 0;
-            crew.forEach(function (m) {
-                const r = m.el.getBoundingClientRect();
-                const dx = (target.x - (r.left + r.width / 2)) / (window.innerWidth / 2);
-                const dy = (target.y - (r.top + r.height * 0.45)) / (window.innerHeight / 2);
-                rmLook(m.svg, dx * 1.6, dy * 1.6);
-            });
-        });
-    }
-    if (!reduced) document.addEventListener('pointermove', function (e) { lookAt(e.clientX, e.clientY); });
+    // The characters stay still (no head or eye tracking).
 
-    // Follow the text cursor in text fields (roughly: 8.5px per character)
-    document.querySelectorAll('.auth-form input[type=text], .auth-form input[type=email]').forEach(function (input) {
-        function follow() {
-            const r = input.getBoundingClientRect();
-            lookAt(r.left + 14 + Math.min(input.value.length * 8.5, r.width - 28), r.top + r.height / 2);
-        }
-        input.addEventListener('input', follow);
-        input.addEventListener('focus', follow);
-    });
-
-    // Hands over the eyes for password fields; "Show" makes one of them peek
+    // Blindfolds over the eyes for password fields; "Show" lets one of them peek
     document.querySelectorAll('.auth-form input[type=password]').forEach(function (input) {
         input.addEventListener('focus', function () { stage.classList.add('is-hiding'); });
         input.addEventListener('blur', function () { stage.classList.remove('is-hiding'); });
@@ -62,7 +37,7 @@
         setTimeout(function () {
             stage.classList.remove('is-hiding', 'is-peeking', 'is-sad');
             void stage.offsetWidth;                                // restart the animation
-            stage.classList.add(e.defaultPrevented ? 'is-sad' : 'is-happy');
+            if (e.defaultPrevented) stage.classList.add('is-sad');   // a gentle nod, no jumping
         }, 0);
     });
     stage.addEventListener('animationend', function (e) {

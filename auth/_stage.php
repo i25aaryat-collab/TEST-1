@@ -29,7 +29,7 @@
         <?php foreach ([0, 2, 1] as $i): ?>
             <div class="crew-member" data-char="<?= $i ?>">
                 <div class="crew-svg"></div>
-                <span class="hand left"></span><span class="hand right"></span>
+                <span class="blindfold" aria-hidden="true"><i></i></span>
             </div>
         <?php endforeach; ?>
     </div>
