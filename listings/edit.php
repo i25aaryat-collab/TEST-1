@@ -59,6 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int) $pdo->lastInsertId();
             set_flash('success', 'Your room is listed!');
         }
+        // Map pin from the location picker (exact, chosen by the poster)
+        $lat = $_POST['loc_lat'] ?? ''; $lng = $_POST['loc_lng'] ?? '';
+        if (is_numeric($lat) && is_numeric($lng) && abs((float) $lat) <= 90 && abs((float) $lng) <= 180) {
+            $pdo->prepare('UPDATE listings SET lat = ?, lng = ?, loc_approx = 0 WHERE id = ? AND user_id = ?')->execute([(float) $lat, (float) $lng, $id, $_SESSION['user_id']]);
+        }
         redirect('listings/view.php?id=' . $id);
     }
 }
@@ -113,6 +118,10 @@ require __DIR__ . '/../includes/header.php';
             <div class="char-count" id="desc-count"></div><?= lerr($errors, 'description') ?>
         </div>
         <div class="form-group">
+            <label>Location on the map <span class="muted">(people who haven't connected with you only see the rough area)</span></label>
+            <?= location_picker('loc', $listing && !$listing['loc_approx'] ? ($listing['lat'] ?? '') : '', $listing && !$listing['loc_approx'] ? ($listing['lng'] ?? '') : '', 'Set the flat\'s location') ?>
+        </div>
+        <div class="form-group">
             <label for="photo">Photo <span class="muted">(optional, JPG or PNG up to 2 MB)</span></label>
             <input type="file" id="photo" name="photo" accept="image/jpeg,image/png" class="<?= linv($errors, 'photo') ?>"><?= lerr($errors, 'photo') ?>
         </div>
@@ -139,7 +148,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 
 <?php
-$extraScripts = <<<'HTML'
+$extraScripts = ($extraScripts ?? '') . <<<'HTML'
 <script>
 // Same rules as validate_listing() in listing_helpers.php
 const lf = document.getElementById('listing-form');

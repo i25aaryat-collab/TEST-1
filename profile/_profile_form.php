@@ -102,7 +102,22 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
                 <label class="sr-only" for="photo">Photo file</label>
                 <input type="file" id="photo" name="photo" accept="image/jpeg,image/png" class="<?= invalid($errors, 'photo') ?>">
                 <div class="hint">JPG or PNG, up to 2 MB.</div>
-                <label class="small cartoon-toggle"><input type="checkbox" id="cartoonize"> Turn my photo into a cartoon avatar</label>
+                <button type="button" class="btn btn-sm" id="cartoon-start" hidden>🎨 Make a cartoon version</button>
+                <input type="hidden" name="cartoon_data" id="cartoon-data">
+            </div>
+        </div>
+        <div class="cartoon-panel card" id="cartoon-panel" hidden>
+            <div class="cartoon-pics">
+                <figure><img id="cartoon-original" alt="Your photo"><figcaption>Your photo (kept as it is)</figcaption></figure>
+                <span aria-hidden="true">→</span>
+                <figure><img id="cartoon-preview" alt="Cartoon preview"><figcaption>Cartoon preview</figcaption></figure>
+            </div>
+            <div class="cartoon-progress" id="cartoon-progress" hidden><i></i></div>
+            <p class="small muted" id="cartoon-status" aria-live="polite"></p>
+            <div class="btn-row">
+                <button type="button" class="btn btn-primary btn-sm" id="cartoon-use">Use cartoon</button>
+                <button type="button" class="btn btn-sm" id="cartoon-retry">Try another style</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="cartoon-cancel">Keep my photo</button>
             </div>
         </div>
         <?= error_box($errors, 'photo') ?>
@@ -254,7 +269,7 @@ RM.validateForm(profileForm, function (form) {
     const file = form.photo.files[0];
     if (!oneOf(pic, AVATAR_IDS.concat(['upload', 'none']))) errors.avatar = 'Pick an icon, upload a photo, or choose "No picture".';
     if (pic === 'upload') {
-        if (!file && !HAS_UPLOAD) errors.photo = 'Choose a JPG or PNG to upload, or pick one of the icons.';
+        if (!file && !HAS_UPLOAD && !document.getElementById('cartoon-data').value) errors.photo = 'Choose a JPG or PNG to upload, or pick one of the icons.';
         else if (file && !oneOf(file.type, ['image/jpeg', 'image/png'])) errors.photo = 'Only JPG or PNG images are allowed.';
         else if (file && file.size > 2 * 1024 * 1024) errors.photo = 'Photo must be 2 MB or smaller.';
     }
@@ -299,28 +314,43 @@ profileForm.querySelectorAll('input[name=avatar]').forEach(function (radio) {
         document.getElementById('upload-box').hidden = RM.radioValue(profileForm, 'avatar') !== 'upload';
     });
 });
-// Show the chosen photo straight away, and optionally turn it into a cartoon avatar
-// (js/avatarize.js). The cartoon replaces the file that gets uploaded.
-let originalPhoto = null;
-const cartoon = document.getElementById('cartoonize');
-const preview = document.getElementById('photo-preview');
-async function applyPhoto() {
-    if (!originalPhoto) return;
-    let file = originalPhoto;
-    if (cartoon.checked) {
-        cartoon.disabled = true;
-        try { file = await RMAvatarize.convert(originalPhoto); } catch (e) { RM.toast('Could not convert that photo.', 'error'); }
-        cartoon.disabled = false;
+// Show the chosen photo straight away. "Make a cartoon version" converts it in the
+// browser (js/avatarize.js) and shows both side by side. Nothing changes until
+// "Use cartoon": the cartoon is then sent as a separate field (cartoon_data), so it
+// works on phones that don't let a page swap the file inside a file box.
+(function () {
+    const input = profileForm.photo, preview = document.getElementById('photo-preview');
+    const start = document.getElementById('cartoon-start'), panel = document.getElementById('cartoon-panel');
+    const orig = document.getElementById('cartoon-original'), out = document.getElementById('cartoon-preview');
+    const status = document.getElementById('cartoon-status'), bar = document.getElementById('cartoon-progress');
+    const data = document.getElementById('cartoon-data');
+    let file = null, style = 0, result = '';
+    input.addEventListener('change', function () {
+        file = this.files[0] || null; data.value = ''; panel.hidden = true;
+        if (file && ['image/jpeg', 'image/png'].includes(file.type) && file.size <= 2 * 1024 * 1024) { preview.src = URL.createObjectURL(file); start.hidden = false; }
+        else start.hidden = true;
+    });
+    async function run() {
+        panel.hidden = false; orig.src = URL.createObjectURL(file); out.removeAttribute('src');
+        bar.hidden = false; status.textContent = 'Converting…';
+        document.getElementById('cartoon-use').disabled = true;
+        try {
+            RMAvatarize.LEVELS = [5, 4, 6][style % 3];
+            const png = await RMAvatarize.convert(file);
+            result = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(png); });
+            out.src = result; status.textContent = 'Happy with it? Use it, try another style, or keep your photo.';
+            document.getElementById('cartoon-use').disabled = false;
+        } catch (e) { status.textContent = 'Could not convert that photo. Try another JPG or PNG, or keep your photo.'; }
+        bar.hidden = true;
     }
-    const list = new DataTransfer();          // put the chosen version back into the file input
-    list.items.add(file);
-    profileForm.photo.files = list.files;
-    preview.src = URL.createObjectURL(file);
-}
-profileForm.photo.addEventListener('change', function () {
-    const file = this.files[0];
-    if (file && file.type.startsWith('image/') && file.name !== 'avatar.png') { originalPhoto = file; applyPhoto(); }
-});
-cartoon.addEventListener('change', applyPhoto);
+    start.addEventListener('click', function () { style = 0; run(); });
+    document.getElementById('cartoon-retry').addEventListener('click', function () { style++; run(); });
+    document.getElementById('cartoon-use').addEventListener('click', function () {
+        data.value = result; preview.src = result; panel.hidden = true; RM.toast('Cartoon ready. Save your profile to keep it.', 'success');
+    });
+    document.getElementById('cartoon-cancel').addEventListener('click', function () {
+        data.value = ''; panel.hidden = true; if (file) preview.src = URL.createObjectURL(file);
+    });
+})();
 </script>
 HTML;

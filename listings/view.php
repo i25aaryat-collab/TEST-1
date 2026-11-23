@@ -57,6 +57,14 @@ require __DIR__ . '/../includes/header.php';
         <p class="muted"><?= e($l['area']) ?>, <?= e($l['city']) ?> · available from <?= e(nice_date($l['available_from'])) ?><?= $l['status'] === 'closed' ? ' · <strong>Closed</strong>' : '' ?></p>
         <div class="tags"><span class="tag"><?= e(ROOM_TYPES[$l['room_type']]) ?></span><span class="tag"><?= $l['furnished'] === 'yes' ? 'Furnished' : 'Unfurnished' ?></span></div>
         <p style="margin-top:16px"><?= nl2br(e($l['description'])) ?></p>
+        <?php if ($l['lat'] !== null):
+            $exact = !$l['loc_approx'] && ($isOwner || $state === 'matched');
+            [$mlat, $mlng] = $exact ? [(float) $l['lat'], (float) $l['lng']] : approx_point((float) $l['lat'], (float) $l['lng']);
+            $extraScripts = ($extraScripts ?? '') . map_assets(); ?>
+            <div class="listing-map" id="listing-map" data-lat="<?= $mlat ?>" data-lng="<?= $mlng ?>" data-exact="<?= $exact ? 1 : 0 ?>"></div>
+            <p class="muted small"><?= $exact ? '📍 Exact location' : '◌ Approximate area' . ($l['loc_approx'] ? '' : '. The exact spot shows once you connect with the poster.') ?>
+                <?php if (!empty($me) && ($dn = distance_note($me, $l['lat'], $l['lng']))): ?> · <?= $dn ?><?php endif; ?></p>
+        <?php endif; ?>
 
         <div class="owner-row">
             <img class="avatar" src="<?= e(photo_url($l['owner_photo'])) ?>" alt="">
@@ -106,7 +114,7 @@ $actionUrl = json_encode(url('swipe/swipe_action.php'));
 $reportUrl = json_encode(url('report.php'));
 $chatUrl   = json_encode(url('chat/conversation.php?match_id='));
 $listingId = (int) $l['id'];
-$extraScripts = <<<HTML
+$extraScripts = ($extraScripts ?? '') . <<<HTML
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const contact = document.getElementById('contact'), report = document.getElementById('report');

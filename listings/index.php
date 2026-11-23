@@ -11,6 +11,7 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/listing_helpers.php';
+require_once __DIR__ . '/../swipe/compatibility.php';
 
 $cities = $pdo->query("SELECT DISTINCT city FROM listings WHERE status = 'open' ORDER BY city")->fetchAll(PDO::FETCH_COLUMN);
 $q        = trim($_GET['q'] ?? '');
@@ -21,7 +22,9 @@ $furnished = in_array($_GET['furnished'] ?? '', ['yes', 'no'], true) ? $_GET['fu
 $sorts = ['new' => ['l.created_at DESC', 'Newest first'], 'cheap' => ['l.rent ASC', 'Cheapest first'], 'soon' => ['l.available_from ASC', 'Available soonest']];
 $sort  = array_key_exists($_GET['sort'] ?? '', $sorts) ? $_GET['sort'] : 'new';
 
-$sql = "SELECT l.*, u.name AS owner FROM listings l JOIN users u ON u.id = l.user_id WHERE l.status = 'open'";
+// Each flat is shown through the PERSON who posted it: their name, picture and your score with them.
+$sql = "SELECT l.*, u.name AS owner, u.email AS owner_email, p.photo AS owner_photo, p.answers, p.age, p.age_min, p.age_max
+        FROM listings l JOIN users u ON u.id = l.user_id LEFT JOIN profiles p ON p.user_id = u.id WHERE l.status = 'open'";
 $params = [];
 if ($q !== '')          { $sql .= ' AND (LOWER(l.title) LIKE LOWER(?) OR LOWER(l.area) LIKE LOWER(?))'; $params[] = "%$q%"; $params[] = "%$q%"; }
 if ($city !== '')       { $sql .= ' AND l.city = ?'; $params[] = $city; }
@@ -32,6 +35,39 @@ $sql .= ' ORDER BY ' . $sorts[$sort][0];             // only fixed, known ORDER 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $listings = $stmt->fetchAll();
+
+// My profile (for scores and distances), if I have one
+$me = null;
+if (is_logged_in() && !is_admin()) {
+    $st = $pdo->prepare('SELECT * FROM profiles WHERE user_id = ?'); $st->execute([$_SESSION['user_id']]); $me = $st->fetch() ?: null;
+}
+const DIRECTORY_EMAIL = 'listings@roomiematch.test';    // the account holding imported directory listings
+foreach ($listings as &$l) {
+    $l['is_directory'] = $l['owner_email'] === DIRECTORY_EMAIL;
+    $l['result'] = ($me && !$l['is_directory'] && $l['age']) ? compatibility_result($me, $l) : null;
+}
+unset($l);
+
+// People (not listings) who have a flat in mind: comparing, shortlisted or chosen
+$people = [];
+$st = $pdo->prepare("SELECT u.id AS uid, u.name, p.* FROM profiles p JOIN users u ON u.id = p.user_id
+                     WHERE u.role = 'user' AND p.flat_stage >= 3 AND (p.flat_area IS NOT NULL OR p.flat_rent IS NOT NULL)" . ($city !== '' ? ' AND p.city = ?' : '') . ($me ? ' AND u.id <> ?' : '') . ' ORDER BY p.flat_stage DESC LIMIT 12');
+$st->execute(array_values(array_filter([$city !== '' ? $city : null, $me ? (int) $_SESSION['user_id'] : null])));
+foreach ($st->fetchAll() as $p) { $p['result'] = $me ? compatibility_result($me, $p) : null; $people[] = $p; }
+
+// Points for the map view: exact pins only for a flat's own page; here everything is approximate
+$points = [];
+foreach ($listings as $l) if ($l['lat'] !== null) {
+    [$la, $ln] = approx_point((float) $l['lat'], (float) $l['lng']);
+    $points[] = ['lat' => $la, 'lng' => $ln, 'price' => $l['rent'] ? rupees((int) $l['rent']) : 'Ask', 'title' => $l['title'], 'area' => $l['area'],
+                 'who' => $l['is_directory'] ? 'Directory listing' : explode(' ', $l['owner'])[0], 'url' => url('listings/view.php?id=' . (int) $l['id'])];
+}
+foreach ($people as $p) if ($p['flat_lat'] !== null) {
+    [$la, $ln] = approx_point((float) $p['flat_lat'], (float) $p['flat_lng']);
+    $points[] = ['lat' => $la, 'lng' => $ln, 'price' => $p['flat_rent'] ? rupees((int) $p['flat_rent']) : '🏠', 'title' => $p['flat_desc'] ?: 'Flat in mind', 'area' => $p['flat_area'] ?? '',
+                 'who' => explode(' ', $p['name'])[0], 'url' => url('profile/view_profile.php?id=' . (int) $p['uid'])];
+}
+$extraScripts = map_assets();
 
 // My own listings (open or closed), so I can manage them
 $mine = [];
@@ -92,6 +128,28 @@ require __DIR__ . '/../includes/header.php';
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
 
+    <?php if ($people): ?>
+        <h2 class="section-title" style="margin-top:22px">People with a flat in mind</h2>
+        <div class="people-strip">
+            <?php foreach ($people as $p): [$fi, $fl] = FLAT_STAGES[(int) $p['flat_stage']]; ?>
+                <a class="card person-flat" href="<?= e(url('profile/view_profile.php?id=' . (int) $p['uid'])) ?>">
+                    <div class="poster"><img class="avatar avatar-sm" src="<?= e(photo_url($p['photo'])) ?>" alt=""><div><strong><?= e(explode(' ', $p['name'])[0]) ?>, <?= (int) $p['age'] ?></strong><div class="muted small"><?= e($p['college'] ?: $p['city']) ?></div></div>
+                        <?php if ($p['result']): ?><span class="poster-score <?= score_class($p['result']['score']) ?>"><?= $p['result']['score'] === null ? '–' : $p['result']['score'] . '%' ?></span><?php endif; ?></div>
+                    <span class="stage-pill"><?= $fi ?> <?= e($fl) ?></span>
+                    <div class="small" style="margin-top:6px"><?= $p['flat_rent'] ? '<strong>' . e(rupees((int) $p['flat_rent'])) . '</strong>/month · ' : '' ?><?= e($p['flat_area'] ?? '') ?></div>
+                    <?php if ($me && $p['flat_lat'] !== null && ($d = distance_note($me, $p['flat_lat'], $p['flat_lng']))): ?><div class="small muted"><?= $d ?></div><?php endif; ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="flats-head">
+        <h2 class="section-title">Rooms</h2>
+        <div class="view-toggle" role="group" aria-label="View"><button type="button" data-fview="list" aria-pressed="true">List</button><button type="button" data-fview="map" aria-pressed="false">Map</button></div>
+    </div>
+    <div id="flats-map" class="flats-map" hidden data-points="<?= e(json_encode($points)) ?>"></div>
+    <p class="muted small flats-map-note" hidden>Pins show the approximate area only. Exact addresses are shared by the person once you connect.</p>
+
     <?php if (!$listings): ?>
         <div class="card empty-state">
             <div class="empty-icon">🏠</div>
@@ -103,6 +161,16 @@ require __DIR__ . '/../includes/header.php';
         <div class="match-grid">
             <?php foreach ($listings as $l): ?>
                 <article class="card listing-card">
+                    <div class="poster">
+                        <?php if ($l['is_directory']): ?>
+                            <span class="poster-dir" aria-hidden="true">🏢</span><div><strong>Directory listing</strong><div class="muted small">Imported · confirm availability</div></div>
+                        <?php else: ?>
+                            <img class="avatar avatar-sm" src="<?= e(photo_url($l['owner_photo'])) ?>" alt="">
+                            <div><strong><a href="<?= e(url('profile/view_profile.php?id=' . (int) $l['user_id'])) ?>"><?= e(explode(' ', $l['owner'])[0]) ?></a></strong><?= $l['age'] ? ', ' . (int) $l['age'] : '' ?>
+                                <div class="muted small">has a room to share</div></div>
+                            <?php if ($l['result']): ?><span class="poster-score <?= score_class($l['result']['score']) ?>" title="Your score with <?= e(explode(' ', $l['owner'])[0]) ?>"><?= $l['result']['score'] === null ? '–' : $l['result']['score'] . '%' ?></span><?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                     <a class="listing-photo" href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>" tabindex="-1" aria-hidden="true">
                         <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🏠'}))"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><span>🏠</span><?php endif; ?>
                     </a>
@@ -110,6 +178,7 @@ require __DIR__ . '/../includes/header.php';
                         <div class="listing-price"><?= $l['rent'] ? e(rupees((int) $l['rent'])) . '<small>/month</small>' : 'Rent on request' ?></div>
                         <h3><a href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>"><?= e($l['title']) ?></a></h3>
                         <div class="muted small"><?= e($l['area']) ?>, <?= e($l['city']) ?> · from <?= e(nice_date($l['available_from'])) ?></div>
+                        <?php if ($me && $l['lat'] !== null && ($d = distance_note($me, $l['lat'], $l['lng']))): ?><div class="small"><?= $d ?></div><?php endif; ?>
                         <div class="tags">
                             <span class="tag"><?= e(ROOM_TYPES[$l['room_type']]) ?></span>
                             <span class="tag"><?= $l['furnished'] === 'yes' ? 'Furnished' : 'Unfurnished' ?></span>
@@ -121,4 +190,32 @@ require __DIR__ . '/../includes/header.php';
     <?php endif; ?>
 </div>
 
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+<?php
+$extraScripts .= <<<'HTML'
+<script>
+// List / Map toggle for Flats. The map is drawn the first time it's opened.
+(function () {
+    const box = document.getElementById('flats-map'), grid = document.querySelector('.match-grid, .flats-list'); let drawn = false;
+    document.querySelectorAll('[data-fview]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            const map = b.dataset.fview === 'map';
+            document.querySelectorAll('[data-fview]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+            box.hidden = !map; document.querySelector('.flats-map-note').hidden = !map; if (grid) grid.hidden = map;
+            if (map && !drawn && window.RMMap) {
+                drawn = true;
+                const pts = JSON.parse(box.dataset.points || '[]');
+                const first = pts[0] || { lat: RMMap.INDORE[0], lng: RMMap.INDORE[1] };
+                const m = RMMap.create(box, first.lat, first.lng, 11);
+                const esc = function (t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+                pts.forEach(function (p) {
+                    m.circle(p.lat, p.lng, 500);
+                    m.marker(p.lat, p.lng, '<button type="button" class="price-pin">' + esc(p.price) + '</button>',
+                        '<strong>' + esc(p.who) + '</strong><br>' + esc(p.title) + '<br><span style="color:#888">' + esc(p.area) + '</span><br><a href="' + p.url + '">Open →</a>');
+                });
+            }
+        });
+    });
+})();
+</script>
+HTML;
+require __DIR__ . '/../includes/footer.php'; ?>

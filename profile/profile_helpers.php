@@ -242,8 +242,10 @@ function resolve_picture(string $choice, ?array $file, int $userId, ?string $cur
         return $choice === 'none' ? null : 'avatar:' . $choice;
     }
 
-    // "upload": a new file replaces the old one; without a file, keep the old upload
-    $new = save_uploaded_photo($file, $userId, $errors);
+    // "upload": an accepted cartoon (sent as data) or a new file replaces the old one;
+    // without either, keep the old upload
+    $cartoon = (string) ($_POST['cartoon_data'] ?? '');
+    $new = $cartoon !== '' ? save_cartoon_data($cartoon, $userId, $errors) : save_uploaded_photo($file, $userId, $errors);
     if ($new) {
         if ($currentIsUpload) delete_photo_file($current);
         return $new;
@@ -322,4 +324,23 @@ function profile_to_values(array $p): array
     $v['languages'] = $p['languages'] !== '' ? explode(',', $p['languages']) : [];
     $v['avatar'] = picture_choice($p['photo']);
     return $v;
+}
+
+/** Save a cartoon avatar sent as "data:image/png;base64,..." (made in the browser). Returns the file name or null. */
+function save_cartoon_data(string $dataUrl, int $userId, array &$errors): ?string
+{
+    if (!str_starts_with($dataUrl, 'data:image/png;base64,')) { $errors['photo'] = 'The cartoon could not be read. Try again.'; return null; }
+    $bytes = base64_decode(substr($dataUrl, 22), true);
+    $info = $bytes ? @getimagesizefromstring($bytes) : false;
+    if (!$bytes || strlen($bytes) > MAX_PHOTO_BYTES || !$info || $info['mime'] !== 'image/png' || $info[0] > 1200 || $info[1] > 1200) {
+        $errors['photo'] = 'The cartoon could not be saved. Try again or keep your photo.'; return null;
+    }
+    $newName = 'u' . $userId . '_' . bin2hex(random_bytes(8)) . '.png';
+    if (STORE_IN_DB) {
+        global $pdo;
+        $pdo->prepare('INSERT INTO photos (name, mime, data) VALUES (?, ?, ?)')->execute([$newName, 'image/png', base64_encode($bytes)]);
+        return $newName;
+    }
+    if (file_put_contents(__DIR__ . '/../uploads/' . $newName, $bytes) === false) { $errors['photo'] = 'Could not save the picture. Please try again.'; return null; }
+    return $newName;
 }
