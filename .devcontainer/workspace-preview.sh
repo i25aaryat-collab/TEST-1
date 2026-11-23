@@ -11,11 +11,11 @@ fi
 
 # A socket-only database keeps preview data separate from deployed environments.
 umask 077
-state="$HOME/.local/state/roomiematch-preview"
+state="$HOME/.local/state/roomiematch-preview/$(id -un)"
 mkdir -p "$state"
 socket="$state/mysql.sock"
 if [[ ! -d "$state/data/mysql" ]]; then
-  mariadb-install-db --no-defaults --datadir="$state/data" --auth-root-authentication-method=socket --skip-test-db
+  mariadb-install-db --no-defaults --datadir="$state/data" --auth-root-authentication-method=socket --auth-root-socket-user="$(id -un)" --skip-test-db
 fi
 mariadbd --no-defaults --datadir="$state/data" --socket="$socket" --pid-file="$state/db.pid" --skip-networking --log-error="$state/db.log" &
 db_pid=$!
