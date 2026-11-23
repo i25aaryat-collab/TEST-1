@@ -26,21 +26,9 @@ define('DB_PASS',   getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
 // login sessions and uploaded photos in the database instead of on disk.
 define('STORE_IN_DB', getenv('STORE_IN_DB') === '1');
 
-// ---------- 2. Google reCAPTCHA v2 ("I'm not a robot" checkbox) ------------
-// These two are Google's PUBLIC TEST KEYS. They work on any domain
-// (including localhost) and always pass, with a small "testing only" note
-// under the box. For the real demo, create your own keys at
-// https://www.google.com/recaptcha/admin  (type: v2 checkbox) and add both
-// "localhost" and your online domain to the allowed domains list.
-// The secret key lives only in Vercel env (RECAPTCHA_SECRET_KEY). Until it is set, Google's test pair
-// is used so login never breaks; the real site key below is public by design.
-if (getenv('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SITE_KEY',   getenv('RECAPTCHA_SITE_KEY') ?: '6Lei8i4uAAAAAKA80RJ5v1nUqU3y_quKgaiXd9AQ');
-    define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY'));
-} else {
-    define('RECAPTCHA_SITE_KEY',   '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI');
-    define('RECAPTCHA_SECRET_KEY', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe');
-}
+// ---------- 2. Google reCAPTCHA v3 ----------------------------------------
+define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Les-y4uAAAAAFLZqlirFo4r5xR88C92bHzypbVw');
+define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '');
 
 // Emergency switch: set to false ONLY if the laptop has no internet during
 // the demo (Google's CAPTCHA cannot load offline). Keep it true otherwise.
