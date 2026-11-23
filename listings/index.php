@@ -145,9 +145,9 @@ require __DIR__ . '/../includes/header.php';
 
     <div class="flats-head">
         <h2 class="section-title">Rooms</h2>
-        <div class="view-toggle" role="group" aria-label="View"><button type="button" data-fview="list" aria-pressed="true">List</button><button type="button" data-fview="map" aria-pressed="false">Map</button></div>
+        <?php if (is_logged_in()): ?><div class="view-toggle" role="group" aria-label="View"><button type="button" data-fview="list" aria-pressed="true">List</button><button type="button" data-fview="map" aria-pressed="false">Map</button></div><?php endif; ?>
     </div>
-    <div id="flats-map" class="flats-map" hidden data-points="<?= e(json_encode($points)) ?>"></div>
+    <?php if (is_logged_in()): ?><div id="flats-map" class="flats-map" hidden data-points="<?= e(json_encode($points)) ?>"></div><?php endif; ?>
     <p class="muted small flats-map-note" hidden>Pins show the approximate area only. Exact addresses are shared by the person once you connect.</p>
 
     <?php if (!$listings): ?>

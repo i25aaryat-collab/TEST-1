@@ -66,7 +66,6 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
         <div class="nav-links" id="nav-links">
             <?php if (!is_logged_in()): ?>
                 <?= nav_link('listings/index.php', 'Flats', $current) ?>
-                <?= nav_link('map.php', 'Map', $current) ?>
                 <?= nav_link('auth/login.php', 'Log in', $current) ?>
                 <a class="btn btn-primary btn-sm" href="<?= e(url('auth/register.php')) ?>">Sign up free</a>
             <?php elseif (is_admin()): ?>
