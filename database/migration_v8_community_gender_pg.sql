@@ -4,3 +4,6 @@ ALTER TABLE communities ADD COLUMN IF NOT EXISTS topic VARCHAR(30), ADD COLUMN I
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS gender_text VARCHAR(40);
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_gender_check;
 ALTER TABLE profiles ADD CONSTRAINT profiles_gender_check CHECK (gender IN ('male','female','nosay','other'));
+
+-- photo links can be long
+ALTER TABLE listings ALTER COLUMN photo TYPE VARCHAR(600);

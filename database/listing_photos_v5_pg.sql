@@ -1,4 +1,5 @@
 -- v5 seed: one unique photo per directory flat, plus 4 more Bengaluru listings (from the team's seed file). Safe to re-run.
+ALTER TABLE listings ALTER COLUMN photo TYPE VARCHAR(600);   -- some photo links are longer than 255
 UPDATE listings SET photo='https://cf.bstatic.com/xdata/images/hotel/max1024x768/534923360.jpg?k=e0b326b1fc61a300b4e621a9675e7b7892800ee3059bec51b63e59a8327d52ad&o=' WHERE title='City Home PG' AND user_id=(SELECT id FROM users WHERE email='listings@roomiematch.test');
 UPDATE listings SET photo='https://magazine.homepublication.in/wp-content/uploads/2026/02/DSC03456-Edit-1-2048x1366.jpg' WHERE title='Pro4 Living' AND user_id=(SELECT id FROM users WHERE email='listings@roomiematch.test');
 UPDATE listings SET photo='https://img.cofynd.com/images/latest_images_2024/5e2bbe390780879af3a11b0c759f0a85461f99c2.webp' WHERE title='Dream Homes (Plot No. 1298)' AND user_id=(SELECT id FROM users WHERE email='listings@roomiematch.test');
