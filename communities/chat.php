@@ -125,7 +125,7 @@ require __DIR__ . '/../includes/header.php';
             <button type="button" class="btn btn-ghost picker-toggle" id="picker-toggle" aria-expanded="false" aria-controls="picker" aria-label="Emoji, stickers and GIFs">😊</button>
             <div class="grow">
                 <label class="sr-only" for="body">Message</label>
-                <textarea id="body" name="body" placeholder="Message <?= e($c['name']) ?>…" rows="1" maxlength="500"></textarea>
+                <textarea id="body" name="body" placeholder="Message the group…" rows="1" maxlength="500"></textarea>
                 <div class="field-error" data-error-for="body"></div>
             </div>
             <button type="submit" class="btn btn-primary">Send</button>
