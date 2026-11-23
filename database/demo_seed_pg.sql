@@ -246,4 +246,4 @@ UPDATE profiles p SET
   age_min = GREATEST(17, p.age - 2 - floor(random() * 3)::int),
   age_max = p.age + 3 + floor(random() * 4)::int
 FROM users u
-WHERE u.id = p.user_id AND u.role = 'user' AND u.email NOT LIKE '%@ipm.roomiematch.test' AND p.answers IS NULL;
+WHERE u.id = p.user_id AND u.role = 'user' AND (u.email LIKE '%@example.com' OR (u.email LIKE '%@roomiematch.test' AND u.email NOT LIKE '%@ipm.roomiematch.test')) AND p.answers IS NULL;
