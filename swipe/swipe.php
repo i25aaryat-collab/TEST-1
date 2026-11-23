@@ -26,7 +26,8 @@ $myId = (int) $_SESSION['user_id'];
 $cities = $pdo->query("SELECT DISTINCT p.city FROM profiles p JOIN users u ON u.id = p.user_id
                        WHERE u.role = 'user' ORDER BY p.city")->fetchAll(PDO::FETCH_COLUMN);
 $city = trim($_GET['city'] ?? $me['city']);
-if (!in_array($city, $cities, true)) $city = $me['city'];
+if ($city !== 'any' && !in_array($city, $cities, true)) $city = $me['city'];
+$anyCity = $city === 'any';                       // "Any city": everyone, wherever they live
 
 $maxBudget = isset($_GET['max_budget']) && ctype_digit($_GET['max_budget']) ? (int) $_GET['max_budget'] : null;
 $minScore  = in_array($_GET['min_score'] ?? '', ['50', '70', '85'], true) ? (int) $_GET['min_score'] : 0;
@@ -45,13 +46,13 @@ $sql = "SELECT u.id AS uid, u.name, p.*,
                (SELECT 1 FROM swipes s WHERE s.swiper_id = ? AND s.swiped_id = u.id AND s.direction = 'like') AS requested
         FROM users u
         JOIN profiles p ON p.user_id = u.id
-        WHERE u.role = 'user' AND u.id <> ? AND p.city = ?
+        WHERE u.role = 'user' AND u.id <> ? AND (? = 'any' OR p.city = ?)
           AND u.id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ? AND direction = 'pass')
           AND u.id NOT IN (SELECT swiper_id FROM swipes WHERE swiped_id = ? AND direction = 'like'
                            AND swiper_id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ?))
           AND u.id NOT IN (SELECT CASE WHEN user1_id = ? THEN user2_id ELSE user1_id END
                            FROM matches WHERE user1_id = ? OR user2_id = ?)";
-$params = [$myId, $myId, $city, $myId, $myId, $myId, $myId, $myId, $myId];
+$params = [$myId, $myId, $city, $city, $myId, $myId, $myId, $myId, $myId, $myId];
 // Visibility: "everyone", "my college only" (same college as me), or "only in search" (found by name)
 $sql .= " AND (p.visibility = 'everyone' OR p.visibility IS NULL
            OR (p.visibility = 'college' AND p.college IS NOT NULL AND LOWER(p.college) = LOWER(?))
@@ -116,7 +117,7 @@ require __DIR__ . '/../includes/header.php';
 <div class="container">
     <div class="page-head">
         <div>
-            <h1>Your matches in <?= e($city) ?></h1>
+            <h1>Your matches <?= $anyCity ? 'in every city' : 'in ' . e($city) ?></h1>
             <p class="muted"><span id="count"><?= count($people) ?></span> <?= count($people) === 1 ? 'person' : 'people' ?>, ranked by how well you'd live together.</p>
         </div>
         <div class="btn-row">
@@ -141,6 +142,7 @@ require __DIR__ . '/../includes/header.php';
                     <div class="form-group">
                         <label for="f-city">City</label>
                         <select id="f-city" name="city">
+                            <option value="any" <?= $anyCity ? 'selected' : '' ?>>Any city</option>
                             <?php foreach ($cities as $c): ?>
                                 <option value="<?= e($c) ?>" <?= $c === $city ? 'selected' : '' ?>><?= e($c) ?><?= $c === $me['city'] ? ' (your city)' : '' ?></option>
                             <?php endforeach; ?>
@@ -202,7 +204,7 @@ require __DIR__ . '/../includes/header.php';
                 <div class="card empty-state">
                     <div class="empty-icon">✓</div>
                     <h2>No one new here yet</h2>
-                    <p>No one else in <?= e($city) ?> fits these filters. Try a lower minimum score, another city, or check your requests.</p>
+                    <p>No one else <?= $anyCity ? 'anywhere' : 'in ' . e($city) ?> fits these filters. Try a lower minimum score, another city, or check your requests.</p>
                     <div class="btn-row" style="justify-content:center">
                         <a class="btn" href="<?= e(url('swipe/swipe.php')) ?>">Reset filters</a>
                         <a class="btn btn-primary" href="<?= e(url('swipe/matches.php')) ?>">See requests</a>
@@ -220,7 +222,7 @@ require __DIR__ . '/../includes/header.php';
                                 <img class="avatar avatar-md" src="<?= e(photo_url($c['photo'])) ?>" alt="">
                                 <div class="result-who">
                                     <h2><a href="<?= e(url('profile/view_profile.php?id=' . (int) $c['uid'])) ?>"><?= e($first) ?>, <?= (int) $c['age'] ?></a></h2>
-                                    <p class="muted small"><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?></p>
+                                    <p class="muted small"><?= $anyCity ? e($c['city']) . ' · ' : '' ?><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?></p>
                                 </div>
                                 <?= score_ring($c['score']) ?>
                             </div>
