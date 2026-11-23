@@ -197,7 +197,7 @@ function clip(string $id, string $class = ''): string
 </section>
 
 <?php
-$extraScripts = '<script src="' . e(url('js/characters.js')) . '"></script><script src="' . e(url('js/landing.js')) . '?v=3"></script><script src="' . e(url('js/home-story.js')) . '?v=1"></script>'
+$extraScripts = '<script src="' . e(url('js/characters.js')) . '"></script><script src="' . e(url('js/landing.js')) . '?v=' . substr(md5_file(__DIR__ . '/js/landing.js'), 0, 8) . '"></script><script src="' . e(url('js/home-story.js')) . '?v=' . substr(md5_file(__DIR__ . '/js/home-story.js'), 0, 8) . '"></script>'
   . '<script>document.querySelectorAll(".look-face").forEach(function(el){el.innerHTML=rmCharacterSVG(RM_CHARACTERS[+el.dataset.char],{x:0,y:0},true)});'
   . 'addEventListener("pointermove",function(e){document.querySelectorAll(".look-face svg").forEach(function(s){var r=s.getBoundingClientRect();rmLook(s,(e.clientX-r.left-r.width/2)/innerWidth*3,(e.clientY-r.top-r.height/2)/innerHeight*3)})});</script>';
 require __DIR__ . '/includes/footer.php';

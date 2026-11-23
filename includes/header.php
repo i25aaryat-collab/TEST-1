@@ -45,7 +45,7 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <title><?= e($pageTitle) ?></title>
     <link rel="icon" href="<?= e(url('css/logo.svg')) ?>" type="image/svg+xml">
-    <link rel="stylesheet" href="<?= e(url('css/style.css')) ?>?v=1">
+    <link rel="stylesheet" href="<?= e(url('css/style.css')) ?>?v=<?= substr(md5_file(__DIR__ . '/../css/style.css'), 0, 8) ?>"><!-- version changes with the file, so browsers never keep an old copy -->
     <?= $extraHead ?? '' ?>
 </head>
 <body class="<?= e($bodyClass ?? '') ?>">
