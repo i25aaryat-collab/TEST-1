@@ -83,13 +83,15 @@ usort($people, fn($x, $y) => match ($sort) {
 /** Short reasons for a score: up to 3 strong points and 1 weak point */
 function score_reasons(array $breakdown): array
 {
-    $good = ['Age' => 'Ages fit', 'Sleep and daily rhythm' => 'Sleep fits', 'Cleanliness' => 'Tidiness fits',
-             'Guests and shared space' => 'Guests fit', 'Food at home' => 'Food fits', 'Comfort and boundaries' => 'Comfort fits'];
-    $bad  = ['Age' => 'Outside age range', 'Sleep and daily rhythm' => 'Different rhythms', 'Cleanliness' => 'Tidiness differs',
-             'Guests and shared space' => 'Guests differ', 'Food at home' => 'Food habits differ', 'Comfort and boundaries' => 'Boundaries differ'];
+    $good = ['Age' => 'Ages fit', 'Sleep and daily rhythm' => 'Sleep fits', 'Cleanliness and chores' => 'Tidiness fits',
+             'Guests and shared space' => 'Guests fit', 'Food and household practices' => 'Food fits', 'Comfort and boundaries' => 'Comfort fits'];
+    $bad  = ['Age' => 'Outside age range', 'Sleep and daily rhythm' => 'Different rhythms', 'Cleanliness and chores' => 'Tidiness differs',
+             'Guests and shared space' => 'Guests differ', 'Food and household practices' => 'Food habits differ', 'Comfort and boundaries' => 'Boundaries differ'];
     $plus = $minus = [];
     foreach ($breakdown as $factor => $pts) {
-        $share = $pts / COMPATIBILITY_MAX[$factor];
+        $max = COMPATIBILITY_MAX[$factor] ?? 100;
+        if (!isset($good[$factor]) || !$max) continue;      // unknown section name: skip the tag, never warn
+        $share = $pts / $max;
         if ($share >= 0.8 && count($plus) < 3) $plus[] = $good[$factor];
         if ($share <= 0.4 && !$minus) $minus[] = $bad[$factor];
     }

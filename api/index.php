@@ -8,6 +8,10 @@
  * On XAMPP this file is never used.
  * ========================================================================== */
 
+// Live site: never print PHP warnings into the page; they still go to the Vercel logs.
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
 $root = realpath(__DIR__ . '/..');
 $path = trim((string) ($_GET['__path'] ?? ''), '/');
 unset($_GET['__path']);

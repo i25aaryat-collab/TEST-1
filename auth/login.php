@@ -148,10 +148,6 @@ require __DIR__ . '/../includes/header.php';
                 <button type="submit" class="btn btn-primary btn-block btn-lg">Log in</button>
             </form>
 
-            <div class="demo-hint">
-                <strong>IPM batch:</strong> log in with your first name as the username (password shared by your CR).<br>
-                <strong>Demo:</strong> usera@roomiematch.test · userb@roomiematch.test · admin@roomiematch.test (password <code>Roomie@123</code>)
-            </div>
         </div>
     </div>
 </div>
