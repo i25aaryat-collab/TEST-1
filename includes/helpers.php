@@ -112,7 +112,7 @@ function photo_url(?string $fileName): string
     }
     // An image link (imported listings) is used as it is
     if ($fileName && preg_match('#^https://#', $fileName)) {
-        return $fileName;
+        return url('img.php?u=' . rawurlencode($fileName));   // passed through our server (img.php)
     }
     if ($fileName && is_file(__DIR__ . '/../uploads/' . $fileName)) {
         return url('uploads/' . rawurlencode($fileName));
