@@ -28,8 +28,8 @@ foreach ($rows as $r) {
     $dir = $r['email'] === MAP_DIRECTORY_EMAIL;
     $score = ($me && !$dir && $r['age'] && (int) $r['user_id'] !== (int) $_SESSION['user_id']) ? compatibility_score($me, $r) : null;
     $points[] = ['lat' => $la, 'lng' => $ln, 'city' => $r['city'], 'type' => 'Room',
-        'who' => $dir ? 'Directory listing' : explode(' ', $r['name'])[0], 'avatar' => $dir ? null : photo_url($r['avatar']),
-        'title' => $r['title'], 'area' => $r['area'], 'price' => $r['rent'] ? rupees((int) $r['rent']) . '/month' : 'Rent on request',
+        'who' => $dir ? $r['title'] : explode(' ', $r['name'])[0], 'avatar' => $dir ? null : photo_url($r['avatar']),
+        'title' => $dir ? '' : $r['title'], 'area' => $r['area'], 'price' => $r['rent'] ? rupees((int) $r['rent']) . '/month' : 'Rent on request',
         'pin' => $r['rent'] ? rupees((int) $r['rent']) : 'Room', 'score' => $score, 'url' => url('listings/view.php?id=' . (int) $r['id'])];
 }
 $rows = $pdo->query("SELECT u.id, u.name, p.* FROM profiles p JOIN users u ON u.id = p.user_id
@@ -85,10 +85,11 @@ $extraScripts .= <<<HTML
     const map = RMMap.create(el, first.lat, first.lng, 12);
     let markers = [], show = 'all';
     if (D.me) { map.circle(D.me.lat, D.me.lng, D.me.r * 1000); map.marker(D.me.lat, D.me.lng, '<span class="me-pin" title="Your point (only you see this)"></span>'); }
+    const HOUSE = <?= json_encode(house_icon()) ?>;
     function card(p) {
-        return '<div class="map-card">' + (p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : '<span class="map-card-dir">Dir</span>') +
+        return '<div class="map-card">' + (p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : '<span class="map-card-dir">' + HOUSE + '</span>') +
             '<div><strong>' + esc(p.who) + '</strong>' + (p.score !== null ? ' <span class="map-score">' + p.score + '%</span>' : '') +
-            '<div class="small">' + esc(p.title) + '</div><div class="small muted">' + esc(p.area) + (p.price ? ' · ' + esc(p.price) : '') + '</div>' +
+            (p.title ? '<div class="small">' + esc(p.title) + '</div>' : '') + '<div class="small muted">' + esc(p.area) + (p.price ? ' · ' + esc(p.price) : '') + '</div>' +
             '<div class="tiny muted">' + esc(p.type) + '</div><a href="' + esc(p.url) + '">Open</a></div></div>';
     }
     function draw() {

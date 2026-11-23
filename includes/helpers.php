@@ -72,6 +72,12 @@ function sticker_src(string $id): string
 const REACTIONS = ['❤️', '😂', '👍', '😮', '😢', '🙏'];
 const GIF_IDS = ['yay', 'home', 'keys', 'lol', 'night', 'deal'];  // css/gifs/yay.svg ...
 
+/** A simple drawn house icon (used where a flat has no photo) */
+function house_icon(string $class = 'house-icon'): string
+{
+    return '<svg class="' . $class . '" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M8 22 24 9l16 13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 19v19h22V19" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M21 38V28h6v10" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>';
+}
+
 const GENDER_OPTIONS = ['male' => 'Male', 'female' => 'Female', 'nosay' => 'Prefer not to say', 'other' => 'Self-described'];
 
 /** What to show for someone's gender: their own words if they typed them, nothing if they'd rather not say */

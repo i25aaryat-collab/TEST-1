@@ -1067,3 +1067,8 @@ body { transition: background-color .35s, color .35s; }
 @media (max-width: 760px) { .cc-grid { grid-template-columns:1fr; } .cc-preview { position:static; } .cc-topics { grid-template-columns:1fr 1fr; } }
 
 .gender-text { margin-top:10px; width:100%; }
+
+/* Drawn house icon where a flat has no photo */
+.house-icon { width: 44px; height: 44px; color: var(--muted, #9a9aa8); opacity: .8; }
+.empty-icon .house-icon { width: 56px; height: 56px; }
+.map-card-dir .house-icon, .demo-room-pic .house-icon { width: 24px; height: 24px; }

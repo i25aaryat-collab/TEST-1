@@ -60,7 +60,7 @@ $points = [];
 foreach ($listings as $l) if ($l['lat'] !== null) {
     [$la, $ln] = approx_point((float) $l['lat'], (float) $l['lng']);
     $points[] = ['lat' => $la, 'lng' => $ln, 'price' => $l['rent'] ? rupees((int) $l['rent']) : 'Ask', 'title' => $l['title'], 'area' => $l['area'],
-                 'who' => $l['is_directory'] ? 'Directory listing' : explode(' ', $l['owner'])[0], 'url' => url('listings/view.php?id=' . (int) $l['id'])];
+                 'who' => $l['is_directory'] ? $l['title'] : explode(' ', $l['owner'])[0], 'url' => url('listings/view.php?id=' . (int) $l['id'])];
 }
 foreach ($people as $p) if ($p['flat_lat'] !== null) {
     [$la, $ln] = approx_point((float) $p['flat_lat'], (float) $p['flat_lng']);
@@ -152,7 +152,7 @@ require __DIR__ . '/../includes/header.php';
 
     <?php if (!$listings): ?>
         <div class="card empty-state">
-            <div class="empty-icon">🏠</div>
+            <div class="empty-icon"><?= house_icon() ?></div>
             <h2>No rooms match that</h2>
             <p>Try fewer filters, or post a room yourself.</p>
             <a class="btn" href="<?= e(url('listings/index.php')) ?>">Clear filters</a>
@@ -161,18 +161,14 @@ require __DIR__ . '/../includes/header.php';
         <div class="match-grid">
             <?php foreach ($listings as $l): ?>
                 <article class="card listing-card">
-                    <div class="poster">
-                        <?php if ($l['is_directory']): ?>
-                            <span class="poster-dir" aria-hidden="true">🏢</span><div><strong>Directory listing</strong><div class="muted small">Imported · confirm availability</div></div>
-                        <?php else: ?>
+                    <?php if (!$l['is_directory']): ?><div class="poster">
                             <img class="avatar avatar-sm" src="<?= e(photo_url($l['owner_photo'])) ?>" alt="">
                             <div><strong><a href="<?= e(url('profile/view_profile.php?id=' . (int) $l['user_id'])) ?>"><?= e(explode(' ', $l['owner'])[0]) ?></a></strong><?= $l['age'] ? ', ' . (int) $l['age'] : '' ?>
                                 <div class="muted small">has a room to share</div></div>
                             <?php if ($l['result']): ?><span class="poster-score <?= score_class($l['result']['score']) ?>" title="Your score with <?= e(explode(' ', $l['owner'])[0]) ?>"><?= $l['result']['score'] === null ? '–' : $l['result']['score'] . '%' ?></span><?php endif; ?>
-                        <?php endif; ?>
-                    </div>
-                    <a class="listing-photo" href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>" tabindex="-1" aria-hidden="true">
-                        <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🏠'}))"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><span>🏠</span><?php endif; ?>
+                    </div><?php endif; ?>
+                    <a class="listing-photo" data-fallback="<?= e(house_icon()) ?>" href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>" tabindex="-1" aria-hidden="true">
+                        <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML=this.parentNode.dataset.fallback"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><?= house_icon() ?><?php endif; ?>
                     </a>
                     <div class="body">
                         <div class="listing-price"><?= $l['rent'] ? e(rupees((int) $l['rent'])) . '<small>/month</small>' : 'Rent on request' ?></div>

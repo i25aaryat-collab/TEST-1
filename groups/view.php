@@ -35,7 +35,7 @@ require __DIR__ . '/../includes/header.php';
     </div>
 
     <?php if (!$flats): ?>
-        <div class="card empty-state"><div class="empty-icon">🏠</div><h2>No flats saved yet</h2>
+        <div class="card empty-state"><div class="empty-icon"><?= house_icon() ?></div><h2>No flats saved yet</h2>
             <p>Open any flat and use "Save to shortlist".</p>
             <a class="btn btn-primary" href="<?= e(url('listings/index.php')) ?>">Browse flats</a></div>
     <?php else: ?>

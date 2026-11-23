@@ -161,7 +161,7 @@ function clip(string $id, string $class = ''): string
         <div class="feature-demo demo-flats">
             <?php foreach ($rooms as $k => $r): ?>
                 <a class="card demo-room" style="--k: <?= $k ?>" href="<?= e(url('listings/view.php?id=' . (int) $r['id'])) ?>">
-                    <span class="demo-room-pic">🏠</span>
+                    <span class="demo-room-pic"><?= house_icon() ?></span>
                     <span class="listing-price"><?= $r['rent'] ? e(rupees((int) $r['rent'])) . '<small>/month</small>' : 'Rent on request' ?></span>
                     <strong><?= e($r['title']) ?></strong>
                     <span class="muted small"><?= e($r['area']) ?>, <?= e($r['city']) ?></span>
