@@ -59,8 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ---- CAPTCHA (only asked of Google once everything else is fine) ----
-    if (!$errors && !verify_captcha($_POST['g-recaptcha-response'] ?? null)) {
-        $errors['captcha'] = 'Please tick "I\'m not a robot" and try again.';
+    if (!$errors && !verify_captcha($_POST['g-recaptcha-response'] ?? null, 'register')) {
+        $errors['captcha'] = 'Verification failed. Please try again.';
     }
 
     if (!$errors) {
@@ -136,7 +136,7 @@ function field_class(array $errors, string $name): string { return isset($errors
                 </div>
 
                 <div class="form-group">
-                    <div class="captcha-box" data-field="captcha"><?= captcha_widget() ?></div>
+                    <div class="captcha-box" data-field="captcha"><?= captcha_widget('register') ?></div>
                     <div class="field-error" data-error-for="captcha"><?= e($errors['captcha'] ?? '') ?></div>
                 </div>
 
@@ -161,9 +161,6 @@ RM.validateForm(document.getElementById('register-form'), function (form) {
     if (!RM.isStrongPassword(form.password.value)) errors.password = 'Use at least 8 characters, with at least one letter and one number.';
     if (form.confirm_password.value !== form.password.value || form.confirm_password.value === '') errors.confirm_password = 'The two passwords do not match.';
 
-    if (window.grecaptcha && document.querySelector('.g-recaptcha') && grecaptcha.getResponse() === '') {
-        errors.captcha = 'Please tick "I\'m not a robot".';
-    }
     return errors;
 });
 </script>

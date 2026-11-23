@@ -57,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ---- Step 3: CAPTCHA ----
-    if (!$errors && !verify_captcha($_POST['g-recaptcha-response'] ?? null)) {
-        $errors['captcha'] = 'Please tick "I\'m not a robot" and try again.';
+    if (!$errors && !verify_captcha($_POST['g-recaptcha-response'] ?? null, 'login')) {
+        $errors['captcha'] = 'Verification failed. Please try again.';
     }
 
     if (!$errors) {
@@ -141,7 +141,7 @@ require __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div class="form-group">
-                    <div class="captcha-box" data-field="captcha"><?= captcha_widget() ?></div>
+                    <div class="captcha-box" data-field="captcha"><?= captcha_widget('login') ?></div>
                     <div class="field-error" data-error-for="captcha"><?= e($errors['captcha'] ?? '') ?></div>
                 </div>
 
@@ -165,10 +165,6 @@ RM.validateForm(document.getElementById('login-form'), function (form) {
     const id = form.email.value.trim();
     if (!RM.isEmail(id) && !/^[a-zA-Z]{2,30}$/.test(id)) errors.email = 'Enter a valid email or username.';
     if (!RM.isFilled(form.password.value)) errors.password = 'Enter your password.';
-    // grecaptcha only exists when Google's script loaded (i.e. we are online)
-    if (window.grecaptcha && document.querySelector('.g-recaptcha') && grecaptcha.getResponse() === '') {
-        errors.captcha = 'Please tick "I\'m not a robot".';
-    }
     return errors;
 });
 </script>

@@ -26,8 +26,8 @@ define('DB_PASS',   getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
 // login sessions and uploaded photos in the database instead of on disk.
 define('STORE_IN_DB', getenv('STORE_IN_DB') === '1');
 
-// ---------- 2. Google reCAPTCHA v2 ("I'm not a robot" checkbox) ------------
-define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Lei8i4uAAAAAKA80RJ5v1nUqU3y_quKgaiXd9AQ');
+// ---------- 2. Google reCAPTCHA v3 ----------------------------------------
+define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Les-y4uAAAAAFLZqlirFo4r5xR88C92bHzypbVw');
 define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '');
 
 // Emergency switch: set to false ONLY if the laptop has no internet during
