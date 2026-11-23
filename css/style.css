@@ -1072,3 +1072,15 @@ body { transition: background-color .35s, color .35s; }
 .house-icon { width: 44px; height: 44px; color: var(--muted, #9a9aa8); opacity: .8; }
 .empty-icon .house-icon { width: 56px; height: 56px; }
 .map-card-dir .house-icon, .demo-room-pic .house-icon { width: 24px; height: 24px; }
+
+/* Flats grid: every card the same shape (photo crop, title/area clamps, tags pinned to the bottom) */
+.match-grid { align-items: stretch; }
+.listing-card { height: 100%; }
+.listing-photo { position: relative; flex: 0 0 auto; height: 190px; overflow: hidden; }
+.listing-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.listing-photo .house-icon { position: relative; }
+.listing-card .body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
+.listing-card h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; min-height: 2.6em; }
+.listing-card .body > .muted.small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.9em; }
+.listing-card .tags { margin-top: auto; padding-top: 6px; }
+.listing-card .photo-note { left: 10px; bottom: 10px; font-size: .62rem; font-weight: 600; padding: 2px 8px; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); }
