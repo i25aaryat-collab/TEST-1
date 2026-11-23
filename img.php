@@ -11,13 +11,20 @@
  * placeholder is shown instead of a broken-image icon.
  */
 const IMG_HOSTS = [
-    'asset-cdn.stanzaliving.com', 'cf.bstatic.com', 'communeapartment.com', 'content.jdmagicbox.com',
-    'cpimg.tistatic.com', 'cubitfurniture.com', 'depanache.in', 'dupgs.com',
-    'gos3.ibcdn.com', 'gostops-dev.s3.ap-south-1.amazonaws.com', 'gostops.com', 'hostel360.in',
-    'images.adsttc.com', 'images.jdmagicbox.com', 'img.cofynd.com', 'imgstaticcontent.lbb.in',
-    'jumanji.livspace-cdn.com', 'magazine.homepublication.in', 'media.designcafe.com', 'metaguise.com',
-    'palazzofurnitures.com', 'st.hzcdn.com', 'static.asianpaints.com', 'thearchitectsdiary.com',
-    'www.ashianahousing.com', 'www.beautifulhomes.asianpaints.com', 'www.getsethome.com', 'www.tostemindia.com',
+    'asset-cdn.stanzaliving.com', 'assets.nobroker.in', 'cf.bstatic.com',
+    'communeapartment.com', 'content.jdmagicbox.com', 'cpimg.tistatic.com',
+    'cubitfurniture.com', 'depanache.in', 'dupgs.com',
+    'gos3.ibcdn.com', 'gostops-dev.s3.ap-south-1.amazonaws.com', 'gostops.com',
+    'gsh-cdn.sgp1.cdn.digitaloceanspaces.com', 'hostel360.in', 'imagecdn.99acres.com',
+    'images.adsttc.com', 'images.jdmagicbox.com', 'images.nobroker.in',
+    'img.cofynd.com', 'img.staticmb.com', 'imgstaticcontent.lbb.in',
+    'jumanji.livspace-cdn.com', 'magazine.homepublication.in', 'media.designcafe.com',
+    'metaguise.com', 'palazzofurnitures.com', 'play-zelo-production.s3.ap-south-1.amazonaws.com',
+    'rentok-storage-cdn.azureedge.net', 'rook.gumlet.io', 'roomrentjaipur.com',
+    'st.hzcdn.com', 'static.asianpaints.com', 'thearchitectsdiary.com',
+    'vizima.sfo3.cdn.digitaloceanspaces.com', 'www.ashianahousing.com', 'www.beautifulhomes.asianpaints.com',
+    'www.getsethome.com', 'www.hexahome.in', 'www.pgsathi.in',
+    'www.tostemindia.com',
 ];
 
 $u = (string) ($_GET['u'] ?? '');
