@@ -95,6 +95,15 @@ require __DIR__ . '/../includes/header.php';
             <div class="detail"><span>Pets</span><?= $person['pets'] === 'yes' ? 'Has a pet' : 'No pets' ?></div>
         </div>
 
+        <?php if (!empty($mine) && (int) $mine['user_id'] !== (int) $person['user_id']): ?>
+            <h2 class="section-title" style="margin-top:22px">Lifestyle alignment</h2>
+            <?= lifestyle_box($mine, $person) ?>
+        <?php endif; ?>
+        <?php if (!empty($person['household_note'])): ?>
+            <h2 class="section-title" style="margin-top:22px">Routines they'd like a flatmate to respect</h2>
+            <p><?= nl2br(e($person['household_note'])) ?></p>
+        <?php endif; ?>
+
         <h2 class="section-title" style="margin-top:22px">Okay living with</h2>
         <div class="detail-grid">
             <div class="detail"><span>A smoker</span><?= e(TOLERANCE_OPTIONS[$person['ok_smoking']] ?? '') ?></div>
@@ -105,7 +114,7 @@ require __DIR__ . '/../includes/header.php';
         </div>
 
         <div style="margin-top:16px">
-            <span class="form-label">Languages</span>
+            <span class="form-label">Comfortable chatting in</span>
             <div class="tags" style="margin-top:6px">
                 <?php foreach ($languages as $lang): ?><span class="tag"><?= e($lang) ?></span><?php endforeach; ?>
             </div>

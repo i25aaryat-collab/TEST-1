@@ -2,7 +2,8 @@
 /* ==========================================================================
  * includes/header.php  —  Owner: M1 (Lead)
  * --------------------------------------------------------------------------
- * Top of every page: <head>, the navigation bar and any flash message.
+ * Top of every page: <head>
+    <script>try{var t=localStorage.getItem('rm-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>, the navigation bar and any flash message.
  *
  * Before including it, a page may set:
  *   $pageTitle  text for the browser tab
@@ -57,6 +58,7 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
         </a>
 
         <!-- Hamburger button: only visible on small screens (see style.css) -->
+        <button class="theme-toggle" type="button" aria-label="Switch dark or light mode" onclick="var d=document.documentElement,n=d.dataset.theme==='dark'?'light':'dark';d.dataset.theme=n;try{localStorage.setItem('rm-theme',n)}catch(e){}"></button>
         <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
             <span></span><span></span><span></span>
         </button>

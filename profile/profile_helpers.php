@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../swipe/lifestyle.php';
 /* ==========================================================================
  * profile/profile_helpers.php  —  Owner: M3 (Profiles and validation)
  * --------------------------------------------------------------------------
@@ -25,6 +26,8 @@ function profile_defaults(): array
         'languages' => [], 'bio' => '',
         'ok_smoking' => '', 'ok_drinking' => '', 'ok_pets' => '', 'min_cleanliness' => '', 'sleep_flex' => '',
         'avatar' => '',
+        'q_clean' => '', 'q_quiet' => '', 'q_meals' => '', 'q_guests' => '', 'q_chores' => '',
+        'household_note' => '', 'phone' => '',
     ];
 }
 
@@ -57,6 +60,12 @@ function read_profile_input(array $post): array
         'min_cleanliness' => (string) ($post['min_cleanliness'] ?? ''),
         'sleep_flex'      => (string) ($post['sleep_flex'] ?? ''),
         'avatar'          => (string) ($post['avatar'] ?? ''),   // c01..c12, "upload" or "none"
+        // Optional lifestyle quiz: '' = skipped, '0'..'4' = answer
+        'q_clean'  => (string) ($post['q_clean'] ?? ''),  'q_quiet'  => (string) ($post['q_quiet'] ?? ''),
+        'q_meals'  => (string) ($post['q_meals'] ?? ''),  'q_guests' => (string) ($post['q_guests'] ?? ''),
+        'q_chores' => (string) ($post['q_chores'] ?? ''),
+        'household_note' => trim((string) ($post['household_note'] ?? '')),
+        'phone'          => preg_replace('/[\s-]/', '', (string) ($post['phone'] ?? '')),
     ];
 }
 
@@ -120,12 +129,17 @@ function validate_profile(array $d): array
         }
     }
 
-    // Languages: at least one, each from the fixed list, no repeats
-    if (count($d['languages']) === 0) {
-        $errors['languages'] = 'Pick at least one language.';
-    } elseif (array_diff($d['languages'], LANGUAGE_OPTIONS) || count($d['languages']) !== count(array_unique($d['languages']))) {
+    // Languages: optional (never scored), each from the fixed list, no repeats
+    if (array_diff($d['languages'], LANGUAGE_OPTIONS) || count($d['languages']) !== count(array_unique($d['languages']))) {
         $errors['languages'] = 'Pick languages from the list only.';
     }
+
+    // Optional lifestyle quiz answers: blank or 0-4
+    foreach (['q_clean', 'q_quiet', 'q_meals', 'q_guests', 'q_chores'] as $q) {
+        if ($d[$q] !== '' && !in_array($d[$q], ['0', '1', '2', '3', '4'], true)) $errors[$q] = 'Pick one of the five points, or leave it blank.';
+    }
+    if (mb_strlen($d['household_note']) > 300) $errors['household_note'] = 'Keep this under 300 characters.';
+    if ($d['phone'] !== '' && !preg_match('/^(\+91)?[6-9][0-9]{9}$/', $d['phone'])) $errors['phone'] = 'Enter a 10-digit Indian mobile number (optionally starting +91).';
 
     // What they are okay with in a flatmate: each must be one of the offered answers
     foreach (['ok_smoking' => 'a smoker', 'ok_drinking' => 'someone who drinks', 'ok_pets' => 'pets'] as $field => $what) {
@@ -256,3 +270,6 @@ function picture_choice(?string $photo): string
     if ($photo === null || $photo === '') return 'none';
     return str_starts_with($photo, 'avatar:') ? substr($photo, 7) : 'upload';
 }
+
+/** Quiz value for SQL: null when skipped */
+function quiz_value(string $v): ?int { return $v === '' ? null : (int) $v; }

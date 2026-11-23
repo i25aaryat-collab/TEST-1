@@ -75,9 +75,9 @@ usort($people, fn($x, $y) => match ($sort) {
 /** Short reasons for a score: up to 3 strong points and 1 weak point */
 function score_reasons(array $breakdown): array
 {
-    $good = ['Budget' => 'Budget fits', 'Languages' => 'Shared languages', 'Bedtime' => 'Bedtimes fit',
+    $good = ['Budget' => 'Budget fits', 'Bedtime' => 'Bedtimes fit',
              'Cleanliness' => 'Tidiness fits', 'Pets' => 'Pets OK', 'Smoking' => 'Smoking OK', 'Drinking' => 'Drinking OK'];
-    $bad  = ['Budget' => 'Budgets differ', 'Languages' => 'No shared language', 'Bedtime' => 'Different bedtimes',
+    $bad  = ['Budget' => 'Budgets differ', 'Bedtime' => 'Different bedtimes',
              'Cleanliness' => 'Tidiness clash', 'Pets' => 'Pet clash', 'Smoking' => 'Smoking clash', 'Drinking' => 'Drinking clash'];
     $plus = $minus = [];
     foreach ($breakdown as $factor => $pts) {
@@ -206,6 +206,7 @@ require __DIR__ . '/../includes/header.php';
                                 <?php foreach ($plus as $r): ?><span class="tag tag-no">✓ <?= e($r) ?></span><?php endforeach; ?>
                                 <?php foreach ($minus as $r): ?><span class="tag tag-yes">! <?= e($r) ?></span><?php endforeach; ?>
                             </div>
+                            <?= lifestyle_box($me, $c) ?>
                             <?php if ($c['bio']): ?><p class="result-bio"><?= e($c['bio']) ?></p><?php endif; ?>
                             <details class="breakdown">
                                 <summary>Score breakdown</summary>
@@ -245,8 +246,8 @@ require __DIR__ . '/../includes/header.php';
 <!-- ---------- "It's a match!" pop-up ---------- -->
 <div class="modal-backdrop" id="match-modal" role="dialog" aria-modal="true" aria-labelledby="match-title">
     <div class="modal">
-        <h2 id="match-title">It's a match!</h2>
-        <p class="muted">You and <strong id="match-name"></strong> both want to connect.</p>
+        <h2 id="match-title">Voilà, you two connected!</h2>
+        <p class="muted">You and <strong id="match-name"></strong> both said yes. Here's to finding out if home feels right together.</p>
         <div class="match-avatars">
             <img src="<?= e(photo_url($me['photo'])) ?>" alt="You">
             <img id="match-photo" src="" alt="">

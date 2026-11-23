@@ -38,34 +38,28 @@ function compatibility_breakdown(array $a, array $b): array
 {
     $points = [];
 
-    // Budget (25): how much of EACH person's range the overlap covers, averaged.
+    // Budget (30): how much of EACH person's range the overlap covers, averaged.
     $overlap = min($a['budget_max'], $b['budget_max']) - max($a['budget_min'], $b['budget_min']);
     $points['Budget'] = 0;
     if ($overlap > 0) {
         $widthA = max(1, $a['budget_max'] - $a['budget_min']);   // max(1,...) guards against dividing by 0
         $widthB = max(1, $b['budget_max'] - $b['budget_min']);
-        $points['Budget'] = 25 * (($overlap / $widthA) + ($overlap / $widthB)) / 2;
+        $points['Budget'] = 30 * (($overlap / $widthA) + ($overlap / $widthB)) / 2;
     }
 
-    // Languages (20): 1 shared = 10, 2 shared = 15, 3 or more = 20
-    $langsA = array_map('trim', explode(',', strtolower($a['languages'])));
-    $langsB = array_map('trim', explode(',', strtolower($b['languages'])));
-    $shared = count(array_intersect($langsA, $langsB));
-    $points['Languages'] = $shared > 0 ? min(20, 5 + 5 * $shared) : 0;
-
-    // Bedtime (15): how far apart, beyond what the stricter person accepts
+    // Bedtime (20): how far apart, beyond what the stricter person accepts
     $gap    = abs($a['sleep_slot'] - $b['sleep_slot']);
     $excess = max(0, $gap - min((int) $a['sleep_flex'], (int) $b['sleep_flex']));
-    $points['Bedtime'] = max(0, 15 - 5 * $excess);
+    $points['Bedtime'] = max(0, 20 - 5 * $excess);
 
-    // Cleanliness (15): is each person at least as tidy as the other needs?
+    // Cleanliness (20): is each person at least as tidy as the other needs?
     $shortfall = max(0, $a['min_cleanliness'] - $b['cleanliness'])
                + max(0, $b['min_cleanliness'] - $a['cleanliness']);
-    $points['Cleanliness'] = max(0, 15 - 5 * $shortfall);
+    $points['Cleanliness'] = max(0, 20 - 5 * $shortfall);
 
     // Pets, smoking, drinking: checked in both directions, the worse one counts
-    foreach (['Pets' => ['pets', 'ok_pets', 10], 'Smoking' => ['smoking', 'ok_smoking', 7.5],
-              'Drinking' => ['drinking', 'ok_drinking', 7.5]] as $factor => [$habit, $ok, $max]) {
+    foreach (['Pets' => ['pets', 'ok_pets', 10], 'Smoking' => ['smoking', 'ok_smoking', 10],
+              'Drinking' => ['drinking', 'ok_drinking', 10]] as $factor => [$habit, $ok, $max]) {
         $points[$factor] = $max * min(tolerance($b[$habit], $a[$ok]), tolerance($a[$habit], $b[$ok]));
     }
 
@@ -100,6 +94,8 @@ function score_ring(int $score): string
 
 /** Maximum points for each factor, for showing "10.4 / 25" */
 const COMPATIBILITY_MAX = [
-    'Budget' => 25, 'Bedtime' => 15, 'Cleanliness' => 15, 'Languages' => 20,
-    'Pets' => 10, 'Smoking' => 7.5, 'Drinking' => 7.5,
+    'Budget' => 30, 'Bedtime' => 20, 'Cleanliness' => 20,
+    'Pets' => 10, 'Smoking' => 10, 'Drinking' => 10,
 ];
+
+require_once __DIR__ . '/lifestyle.php';   // optional 5-question Lifestyle alignment

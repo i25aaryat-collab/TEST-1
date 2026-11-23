@@ -172,7 +172,7 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
     <h3 class="form-section-title"><span class="step-no">5</span> A bit more</h3>
 
     <fieldset class="form-group">
-        <legend>Languages you speak <span class="muted small">(pick at least one)</span></legend>
+        <legend>Languages you're comfortable chatting in <span class="muted small">(optional, never used for matching)</span></legend>
         <div class="pill-group<?= invalid($errors, 'languages') ?>" data-field="languages[]">
             <?php foreach (LANGUAGE_OPTIONS as $lang): ?>
                 <label class="pill">
@@ -190,6 +190,35 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
                   class="<?= invalid($errors, 'bio') ?>"><?= e($values['bio']) ?></textarea>
         <div class="char-count" id="bio-count"></div>
         <?= error_box($errors, 'bio') ?>
+    </div>
+
+    <h3 class="form-section-title"><span class="step-no">6</span> Lifestyle quiz <span class="muted small">(optional)</span></h3>
+    <p class="muted small">Five quick questions about day-to-day habits. Neither end is the "good" answer, and you can skip any question.</p>
+    <?php foreach (LIFESTYLE_QUESTIONS as $key => $q): ?>
+        <fieldset class="form-group quiz-q">
+            <legend><?= e($q['ask']) ?></legend>
+            <div class="scale5<?= invalid($errors, $key) ?>">
+                <span class="scale-end"><?= e($q['low']) ?></span>
+                <?php for ($v = 0; $v <= 4; $v++): ?>
+                    <label class="scale-dot"><input type="radio" name="<?= $key ?>" value="<?= $v ?>" <?= (string) $values[$key] === (string) $v ? 'checked' : '' ?> aria-label="<?= $v + 1 ?> of 5"><span></span></label>
+                <?php endfor; ?>
+                <span class="scale-end"><?= e($q['high']) ?></span>
+                <button type="button" class="link-btn small quiz-skip">Skip</button>
+            </div>
+            <?= error_box($errors, $key) ?>
+        </fieldset>
+    <?php endforeach; ?>
+
+    <div class="form-group">
+        <label for="household_note">Are there traditions or household routines you'd like a flatmate to respect? <span class="muted">(optional, not scored)</span></label>
+        <textarea id="household_note" name="household_note" maxlength="300" class="<?= invalid($errors, 'household_note') ?>"><?= e($values['household_note']) ?></textarea>
+        <?= error_box($errors, 'household_note') ?>
+    </div>
+
+    <div class="form-group">
+        <label for="phone">Phone number <span class="muted">(optional, private: only shared when you choose to, with one connection at a time)</span></label>
+        <input type="tel" id="phone" name="phone" value="<?= e($values['phone']) ?>" placeholder="98765 43210" class="<?= invalid($errors, 'phone') ?>">
+        <?= error_box($errors, 'phone') ?>
     </div>
 
     <div class="form-actions">
@@ -211,6 +240,7 @@ $avatarizeJs  = e(url('js/avatarize.js'));
 $extraScripts = <<<HTML
 <script src="$avatarizeJs?v=1"></script>
 <script>
+document.querySelectorAll('.quiz-skip').forEach(function (b) { b.addEventListener('click', function () { b.closest('.scale5').querySelectorAll('input').forEach(function (i) { i.checked = false; }); }); });
 const ALLOWED_LANGUAGES = $languageList;
 const AVATAR_IDS = $avatarIds;
 const HAS_UPLOAD = $hasUpload;
@@ -258,8 +288,7 @@ RM.validateForm(profileForm, function (form) {
     if (!oneOf(RM.radioValue(form, 'sleep_flex'), ['0', '1', '2', '4'])) errors.sleep_flex = 'Pick how different a bedtime you are okay with.';
 
     const langs = RM.checkedValues(form, 'languages[]');
-    if (langs.length === 0) errors['languages[]'] = 'Pick at least one language.';
-    else if (!langs.every(function (l) { return ALLOWED_LANGUAGES.includes(l); })) errors['languages[]'] = 'Pick languages from the list only.';
+    if (!langs.every(function (l) { return ALLOWED_LANGUAGES.includes(l); })) errors['languages[]'] = 'Pick languages from the list only.';
 
     if (!RM.maxLength(form.bio.value, 300)) errors.bio = 'Bio can be at most 300 characters.';
     return errors;

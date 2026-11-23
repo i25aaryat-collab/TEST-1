@@ -23,6 +23,9 @@ $values = [
     'ok_smoking' => $profile['ok_smoking'], 'ok_drinking' => $profile['ok_drinking'], 'ok_pets' => $profile['ok_pets'],
     'min_cleanliness' => (string) $profile['min_cleanliness'], 'sleep_flex' => (string) $profile['sleep_flex'],
     'avatar' => picture_choice($profile['photo']),
+    'q_clean' => (string) $profile['q_clean'], 'q_quiet' => (string) $profile['q_quiet'], 'q_meals' => (string) $profile['q_meals'],
+    'q_guests' => (string) $profile['q_guests'], 'q_chores' => (string) $profile['q_chores'],
+    'household_note' => (string) $profile['household_note'], 'phone' => (string) $profile['phone'],
 ];
 $errors = [];
 $currentPhoto = $profile['photo'];
@@ -44,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 age = ?, gender = ?, city = ?, budget_min = ?, budget_max = ?, sleep_slot = ?,
                 cleanliness = ?, smoking = ?, drinking = ?, pets = ?, languages = ?, bio = ?, photo = ?,
                 ok_smoking = ?, ok_drinking = ?, ok_pets = ?, min_cleanliness = ?, sleep_flex = ?,
+                q_clean = ?, q_quiet = ?, q_meals = ?, q_guests = ?, q_chores = ?, household_note = ?, phone = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ?
         ');
@@ -54,6 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             languages_to_string($values['languages']), $values['bio'], $photo,
             $values['ok_smoking'], $values['ok_drinking'], $values['ok_pets'],
             (int) $values['min_cleanliness'], (int) $values['sleep_flex'],
+            quiz_value($values['q_clean']), quiz_value($values['q_quiet']), quiz_value($values['q_meals']),
+            quiz_value($values['q_guests']), quiz_value($values['q_chores']), $values['household_note'], $values['phone'] ?: null,
             $_SESSION['user_id'],
         ]);
         set_flash('success', 'Profile updated.');

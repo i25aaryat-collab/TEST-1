@@ -76,10 +76,12 @@ require __DIR__ . '/../includes/header.php';
             </form>
         </div>
 
+        <?php require __DIR__ . '/_connection_panel.php'; ?>
+
         <!-- Messages: drawn by PHP first, then kept up to date by JavaScript -->
         <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Messages">
             <?php if (!$messages): ?>
-                <div class="chat-empty">You matched with <?= e($firstName) ?>! Break the ice with a hello or a sticker.</div>
+                <div class="chat-empty">You're connected with <?= e($firstName) ?>. Break the ice with a hello or a sticker.</div>
             <?php endif; ?>
             <?php foreach ($messages as $m): ?>
                 <div class="bubble-row<?= $m['mine'] ? ' mine' : '' ?>">

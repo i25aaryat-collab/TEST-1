@@ -76,6 +76,19 @@ require __DIR__ . '/../includes/header.php';
             <?php elseif (!is_admin()): ?>
                 <button type="button" class="btn btn-primary" id="contact" data-user-id="<?= (int) $l['user_id'] ?>">Message the owner</button>
             <?php endif; ?>
+            <?php if (is_logged_in() && !is_admin()):
+                require_once __DIR__ . '/../groups/group_helpers.php';
+                $myGroups = my_groups($pdo, (int) $_SESSION['user_id']); ?>
+                <?php if ($myGroups): ?>
+                    <form method="post" action="<?= e(url('groups/action.php')) ?>" class="inline-form"><?= csrf_field() ?>
+                        <input type="hidden" name="action" value="add"><input type="hidden" name="from_listing" value="1"><input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
+                        <select name="group_id" aria-label="Shortlist"><?php foreach ($myGroups as $g): ?><option value="<?= (int) $g['id'] ?>"><?= e($g['name']) ?></option><?php endforeach; ?></select>
+                        <button class="btn">Save to shortlist</button>
+                    </form>
+                <?php else: ?>
+                    <a class="btn" href="<?= e(url('groups/index.php')) ?>">Start a flat shortlist</a>
+                <?php endif; ?>
+            <?php endif; ?>
             <?php if (is_logged_in() && !$isOwner && !is_admin()): ?>
                 <button type="button" class="btn btn-ghost" id="report">Report listing</button>
             <?php endif; ?>
