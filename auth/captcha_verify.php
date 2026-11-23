@@ -40,8 +40,8 @@ function verify_captcha(?string $token): bool
     if (!CAPTCHA_ENABLED) {
         return true;                       // offline demo mode
     }
-    if (!$token) {
-        return false;                      // box was not ticked
+    if (!$token || RECAPTCHA_SECRET_KEY === '') {
+        return false;
     }
 
     $postData = http_build_query([
