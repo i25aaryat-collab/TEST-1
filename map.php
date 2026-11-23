@@ -75,6 +75,7 @@ require __DIR__ . '/includes/header.php';
 </div>
 <?php
 $data = json_encode(['points' => $points, 'me' => $myPoint], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+$houseJs = json_encode(house_icon());
 $extraScripts .= <<<HTML
 <script>
 (function () {
@@ -85,7 +86,7 @@ $extraScripts .= <<<HTML
     const map = RMMap.create(el, first.lat, first.lng, 12);
     let markers = [], show = 'all';
     if (D.me) { map.circle(D.me.lat, D.me.lng, D.me.r * 1000); map.marker(D.me.lat, D.me.lng, '<span class="me-pin" title="Your point (only you see this)"></span>'); }
-    const HOUSE = <?= json_encode(house_icon()) ?>;
+    const HOUSE = {$houseJs};
     function card(p) {
         return '<div class="map-card">' + (p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : '<span class="map-card-dir">' + HOUSE + '</span>') +
             '<div><strong>' + esc(p.who) + '</strong>' + (p.score !== null ? ' <span class="map-score">' + p.score + '%</span>' : '') +

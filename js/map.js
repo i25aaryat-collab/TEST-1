@@ -11,10 +11,37 @@ const RMMap = (function () {
     const KEY = (window.RM_MAP || {}).key;
     const INDORE = [22.7196, 75.8577];
 
+    /** Last map look the person chose (or Dark when the site is in dark mode) */
+    function pickLook(names) {
+        let saved = null;
+        try { saved = localStorage.getItem('rm-map-look'); } catch (e) {}
+        if (saved && names.includes(saved)) return saved;
+        return document.documentElement.getAttribute('data-theme') === 'dark' ? 'Dark' : 'Streets';
+    }
+
+    /** The "Map style" chooser in the corner of every map */
+    function lookSwitch(el, names, current, onPick) {
+        const box = document.createElement('div');
+        box.className = 'map-look';
+        box.innerHTML = '<label><span class="sr-only">Map style</span><select aria-label="Map style">' +
+            names.map(n => '<option' + (n === current ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>';
+        const sel = box.querySelector('select');
+        ['mousedown', 'touchstart', 'dblclick', 'wheel', 'click'].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+        sel.addEventListener('change', () => { onPick(sel.value); try { localStorage.setItem('rm-map-look', sel.value); } catch (e) {} });
+        if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+        el.appendChild(box);
+    }
+
     function create(el, lat, lng, zoom) {
         if (KEY && window.maptilersdk) {
             maptilersdk.config.apiKey = KEY;
-            const map = new maptilersdk.Map({ container: el, style: maptilersdk.MapStyle.STREETS, center: [lng, lat], zoom: zoom - 1 });
+            const S = maptilersdk.MapStyle;
+            const looks = { 'Streets': S.STREETS, 'Satellite': S.SATELLITE, 'Satellite + labels': S.HYBRID, 'Terrain': S.OUTDOOR, 'Topographic': S.TOPO, 'Light': S.DATAVIZ ? S.DATAVIZ.LIGHT : S.BRIGHT, 'Dark': S.DATAVIZ ? S.DATAVIZ.DARK : S.STREETS };
+            const start = pickLook(Object.keys(looks));
+            const map = new maptilersdk.Map({ container: el, style: looks[start], center: [lng, lat], zoom: zoom - 1 });
+            const redraw = [];
+            map.on('style.load', () => redraw.forEach(f => f()));
+            lookSwitch(el, Object.keys(looks), start, name => map.setStyle(looks[name]));
             return {
                 raw: map,
                 center: () => { const c = map.getCenter(); return [c.lat, c.lng]; },
@@ -25,13 +52,31 @@ const RMMap = (function () {
                     const pts = []; for (let i = 0; i <= 48; i++) { const t = i / 48 * 2 * Math.PI; pts.push([b + metres / 111320 / Math.cos(a * Math.PI / 180) * Math.cos(t), a + metres / 110540 * Math.sin(t)]); }
                     const id = 'c' + Math.random().toString(36).slice(2);
                     const add = () => { map.addSource(id, { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [pts] } } }); map.addLayer({ id, type: 'fill', source: id, paint: { 'fill-color': '#FF5A5F', 'fill-opacity': .12 } }); };
-                    map.loaded() ? add() : map.on('load', add);
+                    redraw.push(() => { if (!map.getSource(id)) add(); });
+                    if (map.isStyleLoaded()) add();
                 },
                 resize: () => map.resize(),
             };
         }
         const map = L.map(el, { zoomControl: true }).setView([lat, lng], zoom);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+        const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+        const looks = {
+            'Streets': () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }),
+            'Satellite': () => L.tileLayer(esri + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
+            'Satellite + labels': () => L.layerGroup([
+                L.tileLayer(esri + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
+                L.tileLayer(esri + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+                L.tileLayer(esri + 'Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, opacity: .7 })]),
+            'Terrain': () => L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · style © OpenTopoMap (CC-BY-SA)' }),
+            'Topographic': () => L.tileLayer(esri + 'World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles © Esri' }),
+            'Light': () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd', attribution: '© OpenStreetMap © CARTO' }),
+            'Dark': () => L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd', attribution: '© OpenStreetMap © CARTO' }),
+        };
+        let base = null;
+        const use = name => { if (base) map.removeLayer(base); base = looks[name]().addTo(map); };
+        const start = pickLook(Object.keys(looks));
+        use(start);
+        lookSwitch(el, Object.keys(looks), start, use);
         return {
             raw: map,
             center: () => { const c = map.getCenter(); return [c.lat, c.lng]; },
