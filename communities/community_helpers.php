@@ -9,7 +9,7 @@
 /** Communities I'm in: [id, name, code, members] */
 function my_communities(PDO $pdo, int $userId): array
 {
-    $s = $pdo->prepare('SELECT c.id, c.name, c.code, (SELECT COUNT(*) FROM community_members x WHERE x.community_id = c.id) AS members
+    $s = $pdo->prepare('SELECT c.id, c.name, c.code, c.topic, (SELECT COUNT(*) FROM community_members x WHERE x.community_id = c.id) AS members
                         FROM communities c JOIN community_members m ON m.community_id = c.id WHERE m.user_id = ? ORDER BY c.name');
     $s->execute([$userId]);
     return $s->fetchAll();
@@ -35,3 +35,14 @@ function community_link(array $c): string
     $scheme = (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' || !empty($_SERVER['HTTPS'])) ? 'https' : 'http';
     return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . url('communities/join.php?c=' . rawurlencode($c['code']));
 }
+
+const COMMUNITY_TOPICS = [
+    'batch'    => ['College batch', 'Your class or year group'],
+    'hostel'   => ['Hostel or PG', 'People in the same building'],
+    'work'     => ['Workplace', 'Colleagues or interns'],
+    'city'     => ['Moving to a city', 'Everyone heading to the same place'],
+    'interest' => ['Shared interest', 'Gym, music, gaming, anything'],
+    'other'    => ['Something else', 'Describe it below'],
+];
+
+function community_topic_label(?string $t): string { return COMMUNITY_TOPICS[$t][0] ?? ''; }

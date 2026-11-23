@@ -65,7 +65,7 @@ require __DIR__ . '/../includes/header.php';
             <div style="flex:1">
                 <h1><?= e($person['name']) ?>, <?= (int) $person['age'] ?></h1>
                 <p class="muted" style="margin:4px 0 10px">
-                    <?= e(GENDER_OPTIONS[$person['gender']] ?? '') ?> · <?= e($person['city']) ?> · member since <?= e(nice_date($person['joined'])) ?>
+                    <?= gender_label($person) !== '' ? e(gender_label($person)) . ' · ' : '' ?><?= e($person['city']) ?> · member since <?= e(nice_date($person['joined'])) ?>
                 </p>
                 <?php if ($score !== null): ?>
                     <span class="score <?= score_class($score) ?>"><?= $score ?>% compatible</span>

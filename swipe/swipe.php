@@ -218,7 +218,7 @@ require __DIR__ . '/../includes/header.php';
                                 <img class="avatar avatar-md" src="<?= e(photo_url($c['photo'])) ?>" alt="">
                                 <div class="result-who">
                                     <h2><a href="<?= e(url('profile/view_profile.php?id=' . (int) $c['uid'])) ?>"><?= e($first) ?>, <?= (int) $c['age'] ?></a></h2>
-                                    <p class="muted small"><?= e(GENDER_OPTIONS[$c['gender']] ?? '') ?> · <?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?></p>
+                                    <p class="muted small"><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?></p>
                                 </div>
                                 <?= score_ring($c['score']) ?>
                             </div>

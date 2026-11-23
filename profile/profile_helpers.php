@@ -20,7 +20,7 @@ const MIN_BUDGET = 1000;
 function profile_defaults(): array
 {
     return [
-        'age' => '', 'gender' => '', 'city' => '', 'budget_min' => '', 'budget_max' => '',
+        'age' => '', 'gender' => '', 'gender_text' => '', 'city' => '', 'budget_min' => '', 'budget_max' => '',
         'languages' => [], 'bio' => '', 'avatar' => '',
         'college' => '', 'college_status' => '', 'visibility' => 'everyone',
         'religion' => 'Prefer not to say', 'religion_pref' => 'any', 'culture_note' => '',
@@ -43,7 +43,8 @@ function read_profile_input(array $post): array
     $num = fn($k) => is_numeric($post[$k] ?? null) ? (string) (float) $post[$k] : '';
     return [
         'age'         => trim((string) ($post['age'] ?? '')),
-        'gender'      => (string) ($post['gender'] ?? ''),
+        'gender_text' => mb_substr(trim(preg_replace('/\s+/', ' ', (string) ($post['gender_text'] ?? ''))), 0, 40),
+        'gender'      => trim((string) ($post['gender_text'] ?? '')) !== '' ? 'other' : (string) ($post['gender'] ?? ''),
         'city'        => ucwords(strtolower($city)),
         'budget_min'  => trim((string) ($post['budget_min'] ?? '')),
         'budget_max'  => trim((string) ($post['budget_max'] ?? '')),
@@ -90,8 +91,8 @@ function validate_profile(array $d): array
     }
 
     // Gender: one of the dropdown options
-    if (!array_key_exists($d['gender'], GENDER_OPTIONS)) {
-        $errors['gender'] = 'Choose an option from the list.';
+    if (!array_key_exists($d['gender'], GENDER_OPTIONS) || ($d['gender'] === 'other' && $d['gender_text'] === '')) {
+        $errors['gender'] = 'Pick an option or describe it in your own words.';
     }
 
     // City: required, letters and spaces only
@@ -270,7 +271,7 @@ function nullable($v) { return $v === '' || $v === null ? null : $v; }
 function profile_form_columns(array $v): array
 {
     return [
-        'age' => (int) $v['age'], 'gender' => $v['gender'], 'city' => $v['city'],
+        'age' => (int) $v['age'], 'gender' => $v['gender'], 'gender_text' => $v['gender'] === 'other' ? nullable($v['gender_text']) : null, 'city' => $v['city'],
         'budget_min' => (int) $v['budget_min'], 'budget_max' => (int) $v['budget_max'],
         'languages' => languages_to_string($v['languages']), 'bio' => $v['bio'],
         'college' => nullable($v['college']), 'college_status' => nullable($v['college_status']), 'visibility' => $v['visibility'],

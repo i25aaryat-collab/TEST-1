@@ -58,13 +58,13 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
             <?= error_box($errors, 'age') ?>
         </div>
         <div class="form-group">
-            <label for="gender">Gender</label>
-            <select id="gender" name="gender" class="<?= invalid($errors, 'gender') ?>" required>
-                <option value="">Select…</option>
-                <?php foreach (GENDER_OPTIONS as $key => $label): ?>
-                    <option value="<?= e($key) ?>" <?= $values['gender'] === $key ? 'selected' : '' ?>><?= e($label) ?></option>
+            <label id="gender-label">Gender</label>
+            <div class="pill-group<?= invalid($errors, 'gender') ?>" data-field="gender" role="radiogroup" aria-labelledby="gender-label">
+                <?php foreach (['male', 'female', 'nosay'] as $key): ?>
+                    <label class="pill"><input type="radio" name="gender" value="<?= e($key) ?>" <?= $values['gender'] === $key ? 'checked' : '' ?>><span><?= e(GENDER_OPTIONS[$key]) ?></span></label>
                 <?php endforeach; ?>
-            </select>
+            </div>
+            <input id="gender_text" name="gender_text" maxlength="40" class="gender-text" placeholder="Or in your own words (optional)" value="<?= e($values['gender'] === 'other' ? $values['gender_text'] : '') ?>" aria-label="Gender in your own words">
             <?= error_box($errors, 'gender') ?>
         </div>
     </div>
@@ -253,13 +253,16 @@ const ALLOWED_LANGUAGES = $languageList;
 const AVATAR_IDS = $avatarIds;
 const HAS_UPLOAD = $hasUpload;
 const profileForm = document.getElementById('profile-form');
+// Gender: typing your own words clears the pills, picking a pill clears the words
+profileForm.gender_text.addEventListener('input', function () { if (this.value.trim()) profileForm.querySelectorAll('input[name=gender]').forEach(function (r) { r.checked = false; }); });
+profileForm.querySelectorAll('input[name=gender]').forEach(function (r) { r.addEventListener('change', function () { profileForm.gender_text.value = ''; }); });
 const oneOf = (v, list) => list.includes(v);
 
 RM.validateForm(profileForm, function (form) {
     const errors = {};
 
     if (!RM.isIntInRange(form.age.value, 18, 80)) errors.age = 'Age must be a whole number from 18 to 80.';
-    if (!oneOf(form.gender.value, ['male', 'female', 'other'])) errors.gender = 'Choose an option from the list.';
+    if (!form.gender_text.value.trim() && !oneOf(RM.radioValue(form, 'gender'), ['male', 'female', 'nosay'])) errors.gender = 'Pick an option or describe it in your own words.';
 
     const city = form.city.value.trim();
     if (city === '') errors.city = 'City is required.';

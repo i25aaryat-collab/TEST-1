@@ -72,7 +72,16 @@ function sticker_src(string $id): string
 const REACTIONS = ['❤️', '😂', '👍', '😮', '😢', '🙏'];
 const GIF_IDS = ['yay', 'home', 'keys', 'lol', 'night', 'deal'];  // css/gifs/yay.svg ...
 
-const GENDER_OPTIONS = ['male' => 'Male', 'female' => 'Female', 'other' => 'Other'];
+const GENDER_OPTIONS = ['male' => 'Male', 'female' => 'Female', 'nosay' => 'Prefer not to say', 'other' => 'Self-described'];
+
+/** What to show for someone's gender: their own words if they typed them, nothing if they'd rather not say */
+function gender_label(array $p): string
+{
+    $g = $p['gender'] ?? '';
+    if ($g === 'other') return trim((string) ($p['gender_text'] ?? '')) ?: 'Other';
+    if ($g === 'nosay') return '';
+    return GENDER_OPTIONS[$g] ?? '';
+}
 
 // ---------- Output safety ---------------------------------------------------
 
