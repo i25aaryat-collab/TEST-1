@@ -32,8 +32,8 @@ define('STORE_IN_DB', getenv('STORE_IN_DB') === '1');
 // under the box. For the real demo, create your own keys at
 // https://www.google.com/recaptcha/admin  (type: v2 checkbox) and add both
 // "localhost" and your online domain to the allowed domains list.
-define('RECAPTCHA_SITE_KEY',   '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI');
-define('RECAPTCHA_SECRET_KEY', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe');
+define('RECAPTCHA_SITE_KEY',   getenv('RECAPTCHA_SITE_KEY') ?: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI');  // Google's public test key as fallback
+define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe');
 
 // Emergency switch: set to false ONLY if the laptop has no internet during
 // the demo (Google's CAPTCHA cannot load offline). Keep it true otherwise.
