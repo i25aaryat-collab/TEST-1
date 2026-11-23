@@ -110,6 +110,10 @@ function photo_url(?string $fileName): string
         $id = substr($fileName, 7);
         return url('css/avatars/' . (in_array($id, AVATAR_IDS, true) ? $id : 'c01') . '.svg');
     }
+    // An image link (imported listings) is used as it is
+    if ($fileName && preg_match('#^https://#', $fileName)) {
+        return $fileName;
+    }
     if ($fileName && is_file(__DIR__ . '/../uploads/' . $fileName)) {
         return url('uploads/' . rawurlencode($fileName));
     }
@@ -134,4 +138,10 @@ function rupees(int $amount): string
 function nice_date(string $timestamp): string
 {
     return date('j M Y', strtotime($timestamp));
+}
+
+/** True for imported photos that are links, which are not pictures of the actual place */
+function is_representative_photo(?string $photo): bool
+{
+    return (bool) ($photo && str_starts_with($photo, 'https://'));
 }

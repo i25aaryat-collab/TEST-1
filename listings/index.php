@@ -104,7 +104,7 @@ require __DIR__ . '/../includes/header.php';
             <?php foreach ($listings as $l): ?>
                 <article class="card listing-card">
                     <a class="listing-photo" href="<?= e(url('listings/view.php?id=' . (int) $l['id'])) ?>" tabindex="-1" aria-hidden="true">
-                        <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy"><?php else: ?><span>🏠</span><?php endif; ?>
+                        <?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🏠'}))"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><span>🏠</span><?php endif; ?>
                     </a>
                     <div class="body">
                         <div class="listing-price"><?= $l['rent'] ? e(rupees((int) $l['rent'])) . '<small>/month</small>' : 'Rent on request' ?></div>
