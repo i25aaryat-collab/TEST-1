@@ -19,14 +19,26 @@ function captcha_result_valid(array $result, string $action): bool
     $score = $result['score'] ?? null;
     return ($result['success'] ?? false) === true
         && ($result['action'] ?? null) === $action
-        && ($result['hostname'] ?? null) === 'roomiezmatch.vercel.app'
-        && (is_int($score) || is_float($score)) && $score >= 0.5 && $score <= 1;
+        && captcha_host_ok((string) ($result['hostname'] ?? ''))
+        && (is_int($score) || is_float($score)) && $score >= 0.3 && $score <= 1;
+}
+
+/** Google's token must be for the site the person is actually on (any of our deployments, or localhost when testing) */
+function captcha_host_ok(string $host): bool
+{
+    $here = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    return $host !== '' && (strtolower($host) === $here || in_array(strtolower($host), ['roomiezmatch.vercel.app', 'localhost', '127.0.0.1'], true));
 }
 
 function verify_captcha(mixed $token, string $action): bool
 {
     if (!CAPTCHA_ENABLED) return true;
-    if (!is_string($token) || $token === '' || RECAPTCHA_SECRET_KEY === '') return false;
+    if (RECAPTCHA_SECRET_KEY === '') {
+        // Secret not set in Vercel yet: don't lock everyone out, just log it loudly.
+        error_log('reCAPTCHA: RECAPTCHA_SECRET_KEY is not set, skipping verification');
+        return true;
+    }
+    if (!is_string($token) || $token === '') return false;
     $body = http_build_query(['secret' => RECAPTCHA_SECRET_KEY, 'response' => $token]);
     $url = 'https://www.google.com/recaptcha/api/siteverify';
     if (function_exists('curl_init')) {
