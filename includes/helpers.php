@@ -53,7 +53,23 @@ const LANGUAGE_OPTIONS = [
 ];
 
 /** Chat extras: stickers are the characters with a speech bubble, GIFs are animated reactions */
-const STICKER_IDS = AVATAR_IDS;                                  // css/stickers/c01.svg ...
+// Sticker packs: our 12 characters (css/stickers/c01.svg) + Microsoft Fluent 3D
+// emoji (MIT licence, css/stickers/fluent/*.webp)
+const STICKER_PACKS = [
+    'Characters' => AVATAR_IDS,
+    'Flat life'  => ["house", "house_with_garden", "key", "door", "bed", "couch_and_lamp", "broom", "sponge", "bucket", "basket", "shopping_cart", "potted_plant", "pizza", "hot_beverage", "teacup_without_handle", "bubble_tea", "cooking", "money_bag", "alarm_clock", "package", "party_popper", "wrapped_gift", "light_bulb", "soap"],
+    'Feelings'   => ["smiling_face_with_hearts", "face_with_tears_of_joy", "grinning_squinting_face", "hugging_face", "thinking_face", "sleeping_face", "partying_face", "pleading_face", "face_with_rolling_eyes", "saluting_face", "melting_face", "star_struck", "nerd_face", "smiling_face_with_sunglasses", "zany_face", "yawning_face", "thumbs_up", "waving_hand", "handshake", "red_heart", "fire", "sparkles", "dog_face", "ghost"],
+];
+const STICKER_IDS = [...STICKER_PACKS['Characters'], ...STICKER_PACKS['Flat life'], ...STICKER_PACKS['Feelings']];
+
+/** Image path for a sticker id */
+function sticker_src(string $id): string
+{
+    return url(in_array($id, AVATAR_IDS, true) ? 'css/stickers/' . $id . '.svg' : 'css/stickers/fluent/' . $id . '.webp');
+}
+
+/** Quick reactions on chat messages */
+const REACTIONS = ['❤️', '😂', '👍', '😮', '😢', '🙏'];
 const GIF_IDS = ['yay', 'home', 'keys', 'lol', 'night', 'deal'];  // css/gifs/yay.svg ...
 
 const GENDER_OPTIONS = ['male' => 'Male', 'female' => 'Female', 'other' => 'Other'];

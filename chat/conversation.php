@@ -35,6 +35,7 @@ if (isset($_GET['poll'])) {
     }
     mark_read($pdo, $matchId, $myId);
     exit(json_encode(['ok' => true, 'messages' => load_messages($pdo, $matchId, $myId),
+                      'typing' => other_is_typing($pdo, $matchId, $myId),
                       'unread' => unread_count($pdo, $myId)]));
 }
 
@@ -88,7 +89,7 @@ require __DIR__ . '/../includes/header.php';
                     <?php if ($m['kind'] === 'text'): ?>
                         <div class="bubble"><?= e($m['body']) ?><span class="bubble-time"><?= e($m['time']) ?></span></div>
                     <?php else: ?>
-                        <img class="chat-media chat-<?= e($m['kind']) ?>" src="<?= e(url('css/' . ($m['kind'] === 'gif' ? 'gifs' : 'stickers') . '/' . $m['body'] . '.svg')) ?>" alt="<?= e($m['kind']) ?>">
+                        <img class="chat-media chat-<?= e($m['kind']) ?>" src="<?= e($m['kind'] === 'gif' ? url('css/gifs/' . $m['body'] . '.svg') : sticker_src($m['body'])) ?>" alt="<?= e($m['kind']) ?>">
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
@@ -101,15 +102,30 @@ require __DIR__ . '/../includes/header.php';
                 <button type="button" role="tab" aria-selected="false" data-tab="sticker">Stickers</button>
                 <button type="button" role="tab" aria-selected="false" data-tab="gif">GIFs</button>
             </div>
-            <div class="picker-panel" data-panel="emoji">
-                <?php foreach ($emojis as $em): ?><button type="button" class="emoji" data-emoji="<?= e($em) ?>" aria-label="Insert <?= e($em) ?>"><?= e($em) ?></button><?php endforeach; ?>
+            <div class="picker-panel emoji-panel" data-panel="emoji">
+                <input type="search" class="emoji-search" placeholder="Search all emojis (e.g. pizza, sleepy, key)" aria-label="Search emojis">
+                <div class="emoji-cats" role="tablist" aria-label="Emoji categories"></div>
+                <div class="emoji-grid" aria-live="polite"><?php foreach ($emojis as $em): ?><button type="button" class="emoji" data-emoji="<?= e($em) ?>" aria-label="Insert <?= e($em) ?>"><?= e($em) ?></button><?php endforeach; ?></div>
             </div>
-            <div class="picker-panel media" data-panel="sticker" hidden>
-                <?php foreach (STICKER_IDS as $s): ?><button type="button" data-kind="sticker" data-id="<?= e($s) ?>" aria-label="Send sticker <?= (int) substr($s, 1) ?>"><img src="<?= e(url('css/stickers/' . $s . '.svg')) ?>" alt="" loading="lazy"></button><?php endforeach; ?>
+            <div class="picker-panel media sticker-panel" data-panel="sticker" hidden>
+                <div class="pack-tabs">
+                    <?php $first = true; foreach (STICKER_PACKS as $pack => $ids): ?><button type="button" class="pack-tab<?= $first ? ' on' : '' ?>" data-pack="<?= e($pack) ?>"><?= e($pack) ?></button><?php $first = false; endforeach; ?>
+                </div>
+                <?php $first = true; foreach (STICKER_PACKS as $pack => $ids): ?>
+                    <div class="pack-grid" data-pack-grid="<?= e($pack) ?>" <?= $first ? '' : 'hidden' ?>>
+                        <?php foreach ($ids as $sid): ?><button type="button" data-kind="sticker" data-id="<?= e($sid) ?>" aria-label="Send sticker: <?= e(str_replace('_', ' ', $sid)) ?>"><img src="<?= e(sticker_src($sid)) ?>" alt="" loading="lazy"></button><?php endforeach; ?>
+                    </div>
+                <?php $first = false; endforeach; ?>
+                <p class="tiny muted" style="margin:6px 4px 0">3D stickers: Microsoft Fluent Emoji (MIT licence)</p>
             </div>
             <div class="picker-panel media" data-panel="gif" hidden>
                 <?php foreach (GIF_IDS as $g): ?><button type="button" data-kind="gif" data-id="<?= e($g) ?>" aria-label="Send GIF: <?= e($g) ?>"><img src="<?= e(url('css/gifs/' . $g . '.svg')) ?>" alt="" loading="lazy"></button><?php endforeach; ?>
             </div>
+        </div>
+
+        <div class="typing-line" id="typing" hidden><span class="dots"><i></i><i></i><i></i></span> <?= e($firstName) ?> is typing…</div>
+        <div class="quick-replies" id="quick-replies" <?= count($messages) > 3 ? 'hidden' : '' ?>>
+            <?php foreach (['Hi ' . $firstName . '! 👋', 'When can we see the flat? 🏠', 'What does your budget cover? 💸', 'Chai sometime? ☕', 'Early bird or night owl? 🦉'] as $qr): ?><button type="button" class="qr"><?= e($qr) ?></button><?php endforeach; ?>
         </div>
 
         <!-- New message -->
@@ -135,12 +151,18 @@ $sendUrl   = json_encode(url('chat/send_message.php'));
 $reportUrl = json_encode(url('report.php'));
 $inboxUrl  = json_encode(url('chat/inbox.php'));
 $mediaUrl  = json_encode(url('css/'));
+$stickerMap = json_encode(array_combine(STICKER_IDS, array_map('sticker_src', STICKER_IDS)));
+$reactUrl  = json_encode(url('chat/react.php'));
+$typingUrl = json_encode(url('chat/typing.php'));
+$emojiJs   = json_encode(url('js/emoji-data.js'));
+$reactions = json_encode(REACTIONS);
 $name      = json_encode($firstName);
 $extraScripts = <<<HTML
 <script>
 /* ---------- Live chat (M5) ---------- */
 const POLL_URL = $pollUrl, SEND_URL = $sendUrl, REPORT_URL = $reportUrl, INBOX_URL = $inboxUrl, MEDIA_URL = $mediaUrl;
 const OTHER = $name, MATCH_ID = $matchId;
+const STICKERS = $stickerMap, REACT_URL = $reactUrl, TYPING_URL = $typingUrl, EMOJI_JS = $emojiJs, REACTIONS = $reactions;
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const box = document.getElementById('chat-messages');
 const form = document.getElementById('chat-form');
@@ -149,7 +171,7 @@ let lastSignature = '';
 /** Draw all messages. textContent is used for text, so no message can run as HTML. */
 function render(messages) {
     const lastMine = messages.filter(function (m) { return m.mine; }).pop();
-    const signature = messages.map(function (m) { return m.id; }).join(',') + '|' + (lastMine && lastMine.seen ? 's' : '');
+    const signature = messages.map(function (m) { return m.id + ':' + JSON.stringify(m.reactions) + (m.my_reaction || ''); }).join(',') + '|' + (lastMine && lastMine.seen ? 's' : '');
     if (signature === lastSignature) return;                    // nothing changed: don't redraw
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 150;
     lastSignature = signature;
@@ -176,10 +198,29 @@ function render(messages) {
         } else {
             const img = document.createElement('img');
             img.className = 'chat-media chat-' + m.kind;
-            img.src = MEDIA_URL + (m.kind === 'gif' ? 'gifs/' : 'stickers/') + encodeURIComponent(m.body) + '.svg';
+            img.src = m.kind === 'gif' ? MEDIA_URL + 'gifs/' + encodeURIComponent(m.body) + '.svg' : (STICKERS[m.body] || '');
             img.alt = m.kind;
             row.appendChild(img);
         }
+        // Reactions: chips under the message, a ＋ button to add one, double-click = ❤️
+        const target = row.firstChild;
+        target.addEventListener('dblclick', function () { react(m.id, '❤️'); });
+        const reacts = document.createElement('div');
+        reacts.className = 'reacts';
+        Object.keys(m.reactions || {}).forEach(function (em) {
+            const chip = document.createElement('button');
+            chip.type = 'button'; chip.className = 'react-chip' + (m.my_reaction === em ? ' mine' : '');
+            chip.textContent = em + (m.reactions[em] > 1 ? ' ' + m.reactions[em] : '');
+            chip.setAttribute('aria-label', 'Reaction ' + em + (m.my_reaction === em ? ' (yours, click to remove)' : ''));
+            chip.addEventListener('click', function () { react(m.id, em); });
+            reacts.appendChild(chip);
+        });
+        const add = document.createElement('button');
+        add.type = 'button'; add.className = 'react-add'; add.textContent = '☺+'; add.setAttribute('aria-label', 'React to this message');
+        add.addEventListener('click', function (ev) { ev.stopPropagation(); openReactBar(row, m.id); });
+        reacts.appendChild(add);
+        row.appendChild(reacts);
+        if (m.id > lastSeenId && !firstDraw) row.classList.add('pop');
         // Delete my own message, or report the other person's
         const tool = document.createElement('button');
         tool.type = 'button';
@@ -197,6 +238,26 @@ function render(messages) {
         box.appendChild(seen);
     }
     if (nearBottom) box.scrollTop = box.scrollHeight;
+    lastSeenId = messages.length ? messages[messages.length - 1].id : 0; firstDraw = false;
+    document.getElementById('quick-replies').hidden = messages.length > 3;
+}
+let lastSeenId = 0, firstDraw = true;
+
+/** Little bar of quick reactions above a message */
+function openReactBar(row, id) {
+    document.querySelectorAll('.react-bar').forEach(function (b) { b.remove(); });
+    const bar = document.createElement('div');
+    bar.className = 'react-bar';
+    REACTIONS.forEach(function (em) {
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = em; b.setAttribute('aria-label', 'React ' + em);
+        b.addEventListener('click', function () { bar.remove(); react(id, em); });
+        bar.appendChild(b);
+    });
+    row.appendChild(bar);
+    setTimeout(function () { document.addEventListener('click', function close() { bar.remove(); document.removeEventListener('click', close); }); }, 0);
+}
+function react(id, em) {
+    post(REACT_URL, { match_id: MATCH_ID, message_id: id, emoji: em }).then(function () { lastSignature = ''; poll(); });
 }
 
 /** Ask the server for the latest messages (every 1.5 s) */
@@ -214,7 +275,7 @@ function poll() {
                 setTimeout(function () { window.location.href = INBOX_URL; }, 2000);
                 return;
             }
-            if (data.ok) { render(data.messages); RM.setBadge('chats', data.unread); }
+            if (data.ok) { render(data.messages); RM.setBadge('chats', data.unread); document.getElementById('typing').hidden = !data.typing; }
         })
         .catch(function () { /* offline for a moment: try again next time */ });
 }
@@ -284,13 +345,55 @@ picker.querySelectorAll('[role=tab]').forEach(function (tab) {
         picker.querySelectorAll('.picker-panel').forEach(function (p) { p.hidden = p.dataset.panel !== tab.dataset.tab; });
     });
 });
-picker.querySelectorAll('.emoji').forEach(function (b) {
-    b.addEventListener('click', function () {
-        const t = form.body, pos = t.selectionStart || t.value.length;
-        t.value = t.value.slice(0, pos) + b.dataset.emoji + t.value.slice(pos);
-        t.dispatchEvent(new Event('input'));
-        t.focus();
+// Full emoji list (js/emoji-data.js, 1,900+ emojis) loads the first time the picker opens
+const grid = picker.querySelector('.emoji-grid'), cats = picker.querySelector('.emoji-cats'), search = picker.querySelector('.emoji-search');
+function insertEmoji(em) {
+    const t = form.body, pos = t.selectionStart ?? t.value.length;
+    t.value = t.value.slice(0, pos) + em + t.value.slice(pos);
+    t.dispatchEvent(new Event('input')); t.focus();
+    try { const r = JSON.parse(localStorage.getItem('rm-recent-emoji') || '[]').filter(function (x) { return x !== em; }); r.unshift(em); localStorage.setItem('rm-recent-emoji', JSON.stringify(r.slice(0, 24))); } catch (e) {}
+}
+function showEmojis(list) {
+    grid.innerHTML = '';
+    list.forEach(function (x) { const b = document.createElement('button'); b.type = 'button'; b.className = 'emoji'; b.textContent = x[0]; b.title = x[1] || ''; b.setAttribute('aria-label', 'Insert ' + (x[1] || x[0])); grid.appendChild(b); });
+}
+grid.addEventListener('click', function (e) { const b = e.target.closest('.emoji'); if (b) insertEmoji(b.textContent); });
+let emojiLoaded = false;
+function loadEmoji() {
+    if (emojiLoaded) return; emojiLoaded = true;
+    const sc = document.createElement('script'); sc.src = EMOJI_JS;
+    sc.onload = function () {
+        let recent = []; try { recent = JSON.parse(localStorage.getItem('rm-recent-emoji') || '[]'); } catch (e) {}
+        const groups = (recent.length ? [['Recent', '🕘', recent.map(function (x) { return [x, '']; })]] : []).concat(window.RM_EMOJI);
+        groups.forEach(function (g, i) {
+            const b = document.createElement('button'); b.type = 'button'; b.textContent = g[1]; b.title = g[0]; b.setAttribute('aria-label', g[0]);
+            b.addEventListener('click', function () { cats.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); search.value = ''; showEmojis(g[2]); });
+            cats.appendChild(b); if (i === 0) b.click();
+        });
+    };
+    document.head.appendChild(sc);
+}
+toggle.addEventListener('click', loadEmoji);
+search.addEventListener('input', function () {
+    const q = search.value.trim().toLowerCase(); if (!window.RM_EMOJI) return;
+    if (!q) { const on = cats.querySelector('.on'); if (on) on.click(); return; }
+    const hits = []; window.RM_EMOJI.forEach(function (g) { g[2].forEach(function (x) { if (x[1].toLowerCase().includes(q)) hits.push(x); }); });
+    showEmojis(hits.slice(0, 160));
+});
+// Sticker packs
+picker.querySelectorAll('.pack-tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+        picker.querySelectorAll('.pack-tab').forEach(function (x) { x.classList.toggle('on', x === t); });
+        picker.querySelectorAll('.pack-grid').forEach(function (g) { g.hidden = g.dataset.packGrid !== t.dataset.pack; });
     });
+});
+// Quick replies fill the box (you can still edit before sending)
+document.querySelectorAll('.qr').forEach(function (b) { b.addEventListener('click', function () { form.body.value = b.textContent; form.body.dispatchEvent(new Event('input')); form.body.focus(); }); });
+// "Typing…" ping, at most every 3 seconds
+let lastPing = 0;
+form.body.addEventListener('input', function () {
+    if (!form.body.value.trim() || Date.now() - lastPing < 3000) return;
+    lastPing = Date.now(); post(TYPING_URL, { match_id: MATCH_ID }).catch(function () {});
 });
 picker.querySelectorAll('[data-kind]').forEach(function (b) {
     b.addEventListener('click', function () {

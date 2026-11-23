@@ -41,7 +41,7 @@ $pactLabel = !$pactRow ? 'Make a Roomie Pact' : ($pactRow['accepted_by'] ? 'View
         </div>
     <?php endif; ?>
 
-    <details class="panel-block" open>
+    <details class="panel-block" <?= $messages ? '' : 'open' ?>>
         <summary>Things worth talking about</summary>
         <?php if ($align['score'] !== null): ?>
             <?= score_line($align) ?>

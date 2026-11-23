@@ -38,9 +38,31 @@ function load_messages(PDO $pdo, int $matchId, int $myId): array
             'kind' => $row['kind'],                              // text, sticker or gif
             'seen' => $row['read_at'] !== null,                  // for "Seen" under my last message
             'time' => date('j M, g:i A', strtotime($row['created_at'])),
+            'reactions' => [], 'my_reaction' => null,
         ];
     }
+    // Reactions: one per person per message, counted by emoji
+    if ($messages) {
+        $r = $pdo->prepare('SELECT r.message_id, r.user_id, r.emoji FROM message_reactions r JOIN messages m ON m.id = r.message_id WHERE m.match_id = ?');
+        $r->execute([$matchId]);
+        $byId = array_flip(array_column($messages, 'id'));
+        foreach ($r->fetchAll() as $x) {
+            if (!isset($byId[(int) $x['message_id']])) continue;
+            $i = $byId[(int) $x['message_id']];
+            $messages[$i]['reactions'][$x['emoji']] = ($messages[$i]['reactions'][$x['emoji']] ?? 0) + 1;
+            if ((int) $x['user_id'] === $myId) $messages[$i]['my_reaction'] = $x['emoji'];
+        }
+    }
     return $messages;
+}
+
+/** Is the other person typing right now? (they pinged chat/typing.php in the last 6 seconds) */
+function other_is_typing(PDO $pdo, int $matchId, int $myId): bool
+{
+    $s = $pdo->prepare('SELECT at FROM chat_typing WHERE match_id = ? AND user_id <> ? ORDER BY at DESC LIMIT 1');
+    $s->execute([$matchId, $myId]);
+    $at = $s->fetchColumn();
+    return $at && (time() - strtotime($at)) <= 6;
 }
 
 /** True when the request came from fetch() and wants JSON back */
