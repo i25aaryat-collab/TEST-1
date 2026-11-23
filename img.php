@@ -10,8 +10,15 @@
  * visits never depend on the source site. If a source refuses, a drawn
  * placeholder is shown instead of a broken-image icon.
  */
-const IMG_HOSTS = ['images.jdmagicbox.com', 'magazine.homepublication.in', 'jumanji.livspace-cdn.com',
-                   'media.designcafe.com', 'metaguise.com'];
+const IMG_HOSTS = [
+    'asset-cdn.stanzaliving.com', 'cf.bstatic.com', 'communeapartment.com', 'content.jdmagicbox.com',
+    'cpimg.tistatic.com', 'cubitfurniture.com', 'depanache.in', 'dupgs.com',
+    'gos3.ibcdn.com', 'gostops-dev.s3.ap-south-1.amazonaws.com', 'gostops.com', 'hostel360.in',
+    'images.adsttc.com', 'images.jdmagicbox.com', 'img.cofynd.com', 'imgstaticcontent.lbb.in',
+    'jumanji.livspace-cdn.com', 'magazine.homepublication.in', 'media.designcafe.com', 'metaguise.com',
+    'palazzofurnitures.com', 'st.hzcdn.com', 'static.asianpaints.com', 'thearchitectsdiary.com',
+    'www.ashianahousing.com', 'www.beautifulhomes.asianpaints.com', 'www.getsethome.com', 'www.tostemindia.com',
+];
 
 $u = (string) ($_GET['u'] ?? '');
 $host = strtolower((string) parse_url($u, PHP_URL_HOST));
