@@ -50,5 +50,6 @@
 </script>
 <?php endif; ?>
 <?= $extraScripts ?? '' ?>
+<script src="<?= e(url('js/pullcord.js')) ?>?v=1"></script>
 </body>
 </html>

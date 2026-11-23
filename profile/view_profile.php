@@ -44,8 +44,9 @@ if (!$isOwn && !is_admin()) {
     $stmt->execute([$_SESSION['user_id']]);
     $mine = $stmt->fetch();
     if ($mine) {
-        $breakdown = compatibility_breakdown($mine, $person);
-        $score = compatibility_score($mine, $person);
+        $result = compatibility_result($mine, $person);
+        $breakdown = $result['sections'];
+        $score = $result['score'];
     }
     $stmt = $pdo->prepare('SELECT id FROM matches WHERE user1_id = ? AND user2_id = ?');
     $stmt->execute([min($viewId, $_SESSION['user_id']), max($viewId, $_SESSION['user_id'])]);
@@ -88,30 +89,28 @@ require __DIR__ . '/../includes/header.php';
 
         <div class="detail-grid" style="margin-top:20px">
             <div class="detail"><span>Budget</span><?= e(rupees((int) $person['budget_min'])) ?> – <?= e(rupees((int) $person['budget_max'])) ?> / month</div>
-            <div class="detail"><span>Usual bedtime</span><?= e(SLEEP_SLOTS[$person['sleep_slot']] ?? '') ?></div>
-            <div class="detail"><span>Cleanliness</span><?= (int) $person['cleanliness'] ?> / 5 · <?= e(CLEANLINESS_LEVELS[$person['cleanliness']] ?? '') ?></div>
-            <div class="detail"><span>Smoking</span><?= $person['smoking'] === 'yes' ? 'Smokes' : 'Non-smoker' ?></div>
-            <div class="detail"><span>Drinking</span><?= $person['drinking'] === 'yes' ? 'Drinks' : 'Doesn\'t drink' ?></div>
-            <div class="detail"><span>Pets</span><?= $person['pets'] === 'yes' ? 'Has a pet' : 'No pets' ?></div>
+            <?php if (!empty($person['college'])): ?><div class="detail"><span>College</span><?= e($person['college']) ?><?= $person['college_status'] === 'incoming' ? ' · incoming' : ($person['college_status'] === 'current' ? ' · current student' : '') ?></div><?php endif; ?>
+            <?php $ans = test_answers($person); ?>
+            <div class="detail"><span>Test</span><?= count($ans) ?> of <?= count(test_questions()) ?> answered<?= $person['age_min'] ? ' · okay with ages ' . (int) $person['age_min'] . '–' . (int) $person['age_max'] : '' ?></div>
         </div>
 
-        <?php if (!empty($mine) && (int) $mine['user_id'] !== (int) $person['user_id']): ?>
-            <h2 class="section-title" style="margin-top:22px">Lifestyle alignment</h2>
-            <?= lifestyle_box($mine, $person) ?>
-        <?php endif; ?>
-        <?php if (!empty($person['household_note'])): ?>
-            <h2 class="section-title" style="margin-top:22px">Routines they'd like a flatmate to respect</h2>
-            <p><?= nl2br(e($person['household_note'])) ?></p>
+        <?php if (!empty($person['flat_stage'])): [$fIcon, $fLabel] = FLAT_STAGES[(int) $person['flat_stage']] ?? ['', '']; ?>
+            <h2 class="section-title" style="margin-top:22px">Flat in mind</h2>
+            <div class="flat-mind">
+                <?php if (!empty($person['flat_photo'])): ?><img src="<?= e(photo_url($person['flat_photo'])) ?>" alt="Photo of <?= e(explode(' ', $person['name'])[0]) ?>'s flat"><?php endif; ?>
+                <div>
+                    <span class="stage-pill"><?= $fIcon ?> <?= e($fLabel) ?></span>
+                    <?php if ($person['flat_desc']): ?><p><?= e($person['flat_desc']) ?></p><?php endif; ?>
+                    <p class="small"><?= $person['flat_rent'] ? '<strong>' . e(rupees((int) $person['flat_rent'])) . '</strong>/month' : '' ?><?= $person['flat_rent'] && $person['flat_area'] ? ' · ' : '' ?><?= e($person['flat_area'] ?? '') ?></p>
+                    <?php if (!empty($mine) && !$isOwn && $person['flat_lat'] !== null): ?><p class="small muted"><?= distance_note($mine, $person['flat_lat'], $person['flat_lng']) ?></p><?php endif; ?>
+                </div>
+            </div>
         <?php endif; ?>
 
-        <h2 class="section-title" style="margin-top:22px">Okay living with</h2>
-        <div class="detail-grid">
-            <div class="detail"><span>A smoker</span><?= e(TOLERANCE_OPTIONS[$person['ok_smoking']] ?? '') ?></div>
-            <div class="detail"><span>Someone who drinks</span><?= e(TOLERANCE_OPTIONS[$person['ok_drinking']] ?? '') ?></div>
-            <div class="detail"><span>A pet</span><?= e(TOLERANCE_OPTIONS[$person['ok_pets']] ?? '') ?></div>
-            <div class="detail"><span>Messiest flatmate</span><?= e(CLEANLINESS_LEVELS[$person['min_cleanliness']] ?? '') ?></div>
-            <div class="detail"><span>Bedtime difference</span><?= e(SLEEP_FLEX_OPTIONS[$person['sleep_flex']] ?? '') ?></div>
-        </div>
+        <?php if (!empty($person['culture_note'])): ?>
+            <h2 class="section-title" style="margin-top:22px">Things flatmates should know</h2>
+            <p><?= nl2br(e($person['culture_note'])) ?></p>
+        <?php endif; ?>
 
         <div style="margin-top:16px">
             <span class="form-label">Comfortable chatting in</span>
@@ -123,14 +122,16 @@ require __DIR__ . '/../includes/header.php';
 
     <?php if ($breakdown): ?>
         <div class="card">
-            <h2>Why <?= $score ?>%?</h2>
-            <p class="muted">How your profile and <?= e(explode(' ', $person['name'])[0]) ?>'s add up, factor by factor.</p>
+            <h2><?= $score === null ? 'Not enough answers yet' : 'Why ' . $score . '%?' ?></h2>
+            <?= score_line($result) ?>
+            <?php if ($result['same']): ?><p class="small"><?= e($result['same']) ?></p><?php endif; ?>
+            <?php if ($result['discuss']): ?><p class="small">💬 <?= e($result['discuss']) ?></p><?php endif; ?>
             <div class="factor-list">
                 <?php foreach ($breakdown as $factor => $pts): $max = COMPATIBILITY_MAX[$factor]; ?>
                     <div class="factor">
                         <span class="name"><?= e($factor) ?></span>
                         <span class="bar"><i style="width: <?= round($pts / $max * 100) ?>%"></i></span>
-                        <span class="pts"><?= round($pts, 1) ?>/<?= $max ?></span>
+                        <span class="pts"><?= round($pts) ?>%</span>
                     </div>
                 <?php endforeach; ?>
             </div>

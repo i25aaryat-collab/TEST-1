@@ -17,6 +17,7 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/compatibility.php';
+require_once __DIR__ . '/../communities/community_helpers.php';
 
 $me   = require_profile();
 $myId = (int) $_SESSION['user_id'];
@@ -30,9 +31,9 @@ if (!in_array($city, $cities, true)) $city = $me['city'];
 $maxBudget = isset($_GET['max_budget']) && ctype_digit($_GET['max_budget']) ? (int) $_GET['max_budget'] : null;
 $minScore  = in_array($_GET['min_score'] ?? '', ['50', '70', '85'], true) ? (int) $_GET['min_score'] : 0;
 $yesNo     = fn($key) => in_array($_GET[$key] ?? '', ['yes', 'no'], true) ? $_GET[$key] : '';
-$smoking   = $yesNo('smoking');
-$drinking  = $yesNo('drinking');
-$pets      = $yesNo('pets');
+$routine   = in_array($_GET['routine'] ?? '', ['open', 'same'], true) ? $_GET['routine'] : '';   // religion & culture filter
+$community = (int) ($_GET['community'] ?? 0);
+$nameQ     = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 50);              // name search
 $gender    = array_key_exists($_GET['gender'] ?? '', GENDER_OPTIONS) ? $_GET['gender'] : '';
 $sortOptions = ['best' => 'Best match first', 'age' => 'Youngest first', 'budget' => 'Lowest budget first'];
 $sort = array_key_exists($_GET['sort'] ?? '', $sortOptions) ? $_GET['sort'] : 'best';
@@ -51,10 +52,16 @@ $sql = "SELECT u.id AS uid, u.name, p.*,
           AND u.id NOT IN (SELECT CASE WHEN user1_id = ? THEN user2_id ELSE user1_id END
                            FROM matches WHERE user1_id = ? OR user2_id = ?)";
 $params = [$myId, $myId, $city, $myId, $myId, $myId, $myId, $myId, $myId];
+// Visibility: "everyone", "my college only" (same college as me), or "only in search" (found by name)
+$sql .= " AND (p.visibility = 'everyone' OR p.visibility IS NULL
+           OR (p.visibility = 'college' AND p.college IS NOT NULL AND LOWER(p.college) = LOWER(?))
+           OR (p.visibility = 'search' AND ? <> '' AND LOWER(u.name) LIKE LOWER(?)))";
+array_push($params, (string) ($me['college'] ?? ''), $nameQ, '%' . $nameQ . '%');
+if ($nameQ !== '') { $sql .= ' AND LOWER(u.name) LIKE LOWER(?)'; $params[] = '%' . $nameQ . '%'; }
 if ($maxBudget !== null) { $sql .= ' AND p.budget_min <= ?'; $params[] = $maxBudget; }
-if ($smoking  !== '')    { $sql .= ' AND p.smoking = ?';     $params[] = $smoking; }
-if ($drinking !== '')    { $sql .= ' AND p.drinking = ?';    $params[] = $drinking; }
-if ($pets     !== '')    { $sql .= ' AND p.pets = ?';        $params[] = $pets; }
+if ($routine === 'open') { $sql .= " AND p.religion_pref = 'open'"; }
+if ($routine === 'same' && !empty($me['religion']) && $me['religion'] !== 'Prefer not to say') { $sql .= ' AND p.religion = ?'; $params[] = $me['religion']; }
+if ($community) { $sql .= ' AND p.user_id IN (SELECT a.user_id FROM community_members a JOIN community_members b ON b.community_id = a.community_id WHERE b.user_id = ? AND a.community_id = ?)'; $params[] = $myId; $params[] = $community; }
 if ($gender   !== '')    { $sql .= ' AND p.gender = ?';      $params[] = $gender; }
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -62,33 +69,34 @@ $stmt->execute($params);
 // ---------- 3. Score, filter by minimum score, sort ----------
 $people = [];
 foreach ($stmt->fetchAll() as $c) {
-    $c['breakdown'] = compatibility_breakdown($me, $c);
-    $c['score'] = (int) round(array_sum($c['breakdown']));
-    if ($c['score'] >= $minScore) $people[] = $c;
+    $c['result'] = compatibility_result($me, $c);
+    $c['breakdown'] = $c['result']['sections'];
+    $c['score'] = $c['result']['score'];                       // null = not enough shared answers
+    if (!$minScore || ($c['score'] !== null && $c['score'] >= $minScore)) $people[] = $c;
 }
 usort($people, fn($x, $y) => match ($sort) {
     'age'    => $x['age'] <=> $y['age'],
     'budget' => $x['budget_min'] <=> $y['budget_min'],
-    default  => $y['score'] <=> $x['score'],
+    default  => [$y['score'] ?? -1, $y['result']['shared']] <=> [$x['score'] ?? -1, $x['result']['shared']],   // best first, no-score last
 });
 
 /** Short reasons for a score: up to 3 strong points and 1 weak point */
 function score_reasons(array $breakdown): array
 {
-    $good = ['Budget' => 'Budget fits', 'Bedtime' => 'Bedtimes fit',
-             'Cleanliness' => 'Tidiness fits', 'Pets' => 'Pets OK', 'Smoking' => 'Smoking OK', 'Drinking' => 'Drinking OK'];
-    $bad  = ['Budget' => 'Budgets differ', 'Bedtime' => 'Different bedtimes',
-             'Cleanliness' => 'Tidiness clash', 'Pets' => 'Pet clash', 'Smoking' => 'Smoking clash', 'Drinking' => 'Drinking clash'];
+    $good = ['Age' => 'Ages fit', 'Sleep and daily rhythm' => 'Sleep fits', 'Cleanliness' => 'Tidiness fits',
+             'Guests and shared space' => 'Guests fit', 'Food at home' => 'Food fits', 'Comfort and boundaries' => 'Comfort fits'];
+    $bad  = ['Age' => 'Outside age range', 'Sleep and daily rhythm' => 'Different rhythms', 'Cleanliness' => 'Tidiness differs',
+             'Guests and shared space' => 'Guests differ', 'Food at home' => 'Food habits differ', 'Comfort and boundaries' => 'Boundaries differ'];
     $plus = $minus = [];
     foreach ($breakdown as $factor => $pts) {
         $share = $pts / COMPATIBILITY_MAX[$factor];
         if ($share >= 0.8 && count($plus) < 3) $plus[] = $good[$factor];
-        if ($share <= 0.2 && !$minus) $minus[] = $bad[$factor];
+        if ($share <= 0.4 && !$minus) $minus[] = $bad[$factor];
     }
     return [$plus, $minus];
 }
 
-$filtersActive = $maxBudget !== null || $minScore || $smoking || $drinking || $pets || $gender || $city !== $me['city'];
+$filtersActive = $maxBudget !== null || $minScore || $routine || $community || $nameQ !== '' || $gender || $city !== $me['city'];
 
 function yes_no_select(string $name, string $label, string $value): string
 {
@@ -125,6 +133,10 @@ require __DIR__ . '/../includes/header.php';
             <div class="card">
                 <form method="get" action="">
                     <div class="form-group">
+                        <label for="f-q">Search by name</label>
+                        <input id="f-q" name="q" value="<?= e($nameQ) ?>" placeholder="e.g. Aanya">
+                    </div>
+                    <div class="form-group">
                         <label for="f-city">City</label>
                         <select id="f-city" name="city">
                             <?php foreach ($cities as $c): ?>
@@ -155,9 +167,17 @@ require __DIR__ . '/../includes/header.php';
                                value="<?= $maxBudget !== null ? (int) $maxBudget : '' ?>">
                         <span class="hint">People whose budget starts at or below this.</span>
                     </div>
-                    <?= yes_no_select('smoking', 'Smokes', $smoking) ?>
-                    <?= yes_no_select('drinking', 'Drinks', $drinking) ?>
-                    <?= yes_no_select('pets', 'Has a pet', $pets) ?>
+                    <div class="form-group"><label for="f-routine">Religious and cultural routines</label><select id="f-routine" name="routine">
+                        <option value="">No preference</option>
+                        <option value="open" <?= $routine === 'open' ? 'selected' : '' ?>>Comfortable with different routines</option>
+                        <option value="same" <?= $routine === 'same' ? 'selected' : '' ?>>Same religion as me</option>
+                    </select></div>
+                    <?php $myComms = my_communities($pdo, $myId); if ($myComms): ?>
+                    <div class="form-group"><label for="f-community">Community</label><select id="f-community" name="community">
+                        <option value="0">Everyone</option>
+                        <?php foreach ($myComms as $cm): ?><option value="<?= (int) $cm['id'] ?>" <?= $community === (int) $cm['id'] ? 'selected' : '' ?>><?= e($cm['name']) ?></option><?php endforeach; ?>
+                    </select></div>
+                    <?php endif; ?>
                     <div class="form-group">
                         <label for="f-sort">Sort by</label>
                         <select id="f-sort" name="sort">
@@ -193,26 +213,27 @@ require __DIR__ . '/../includes/header.php';
                     <?php foreach ($people as $i => $c):
                         [$plus, $minus] = score_reasons($c['breakdown']);
                         $first = explode(' ', $c['name'])[0]; ?>
-                        <article class="card result-card<?= $c['score'] >= 85 ? ' is-top' : '' ?>" data-score="<?= (int) $c['score'] ?>" data-user-id="<?= (int) $c['uid'] ?>" data-name="<?= e($first) ?>" style="--i: <?= min($i, 8) ?>">
+                        <article class="card result-card<?= ($c['score'] ?? 0) >= 85 ? ' is-top' : '' ?>" data-score="<?= (int) $c['score'] ?>" data-user-id="<?= (int) $c['uid'] ?>" data-name="<?= e($first) ?>" style="--i: <?= min($i, 8) ?>">
                             <div class="result-top">
                                 <img class="avatar avatar-md" src="<?= e(photo_url($c['photo'])) ?>" alt="">
                                 <div class="result-who">
                                     <h2><a href="<?= e(url('profile/view_profile.php?id=' . (int) $c['uid'])) ?>"><?= e($first) ?>, <?= (int) $c['age'] ?></a></h2>
                                     <p class="muted small"><?= e(GENDER_OPTIONS[$c['gender']] ?? '') ?> · <?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?></p>
                                 </div>
-                                <?= score_ring((int) $c['score']) ?>
+                                <?= score_ring($c['score']) ?>
                             </div>
                             <div class="tags">
                                 <?php foreach ($plus as $r): ?><span class="tag tag-no">✓ <?= e($r) ?></span><?php endforeach; ?>
                                 <?php foreach ($minus as $r): ?><span class="tag tag-yes">! <?= e($r) ?></span><?php endforeach; ?>
                             </div>
-                            <?= lifestyle_box($me, $c) ?>
+                            <?= score_line($c['result']) ?>
+                            <?php if ($c['result']['same'] || $c['result']['discuss']): ?><p class="small muted"><?= e($c['result']['same'] ?? '') ?><?= $c['result']['same'] && $c['result']['discuss'] ? '<br>' : '' ?><?= e($c['result']['discuss'] ?? '') ?></p><?php endif; ?>
                             <?php if ($c['bio']): ?><p class="result-bio"><?= e($c['bio']) ?></p><?php endif; ?>
                             <details class="breakdown">
                                 <summary>Score breakdown</summary>
                                 <table>
                                     <?php foreach ($c['breakdown'] as $factor => $pts): ?>
-                                        <tr><td><?= e($factor) ?></td><td><span class="mini-bar"><i style="width:<?= round($pts / COMPATIBILITY_MAX[$factor] * 100) ?>%"></i></span></td><td><?= round($pts, 1) ?> / <?= COMPATIBILITY_MAX[$factor] ?></td></tr>
+                                        <tr><td><?= e($factor) ?></td><td><span class="mini-bar"><i style="width:<?= round($pts / COMPATIBILITY_MAX[$factor] * 100) ?>%"></i></span></td><td><?= round($pts) ?>%</td></tr>
                                     <?php endforeach; ?>
                                 </table>
                             </details>
@@ -284,7 +305,7 @@ function act(card, direction) {
         if (!data.ok) { buttons.forEach(function (b) { b.disabled = false; }); if (card.classList.contains('gone')) { card.hidden = false; card.classList.remove('gone', 'show-like', 'show-nope'); card.style.cssText = ''; layoutDeck(); } RM.toast(data.error || 'Something went wrong.', 'error'); return; }
         if (deckMode && card.classList.contains('gone')) {
             if (data.matched) showMatch(card, data.match_id);
-            else if (direction === 'like') RM.toast('Request sent to ' + card.dataset.name + ' (' + card.dataset.score + '% match).', 'success');
+            else if (direction === 'like') RM.toast('Request sent to ' + card.dataset.name + '.', 'success');
             return;
         }
         if (direction === 'pass') { card.classList.add('leaving'); setTimeout(function () { card.remove(); }, 300); return; }

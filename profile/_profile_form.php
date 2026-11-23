@@ -125,52 +125,25 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
         </div>
     </div>
 
-    <h3 class="form-section-title"><span class="step-no">3</span> How you live</h3>
-
-    <div class="form-group">
-        <label for="sleep_slot">When do you usually go to sleep?</label>
-        <select id="sleep_slot" name="sleep_slot" class="<?= invalid($errors, 'sleep_slot') ?>" required>
-            <option value="">Select a 2-hour window…</option>
-            <?php foreach (SLEEP_SLOTS as $slot => $label): ?>
-                <option value="<?= $slot ?>" <?= (string) $values['sleep_slot'] === (string) $slot ? 'selected' : '' ?>><?= e($label) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?= error_box($errors, 'sleep_slot') ?>
+    <h3 class="form-section-title"><span class="step-no">3</span> College and who sees you</h3>
+    <div class="form-group college-pick">
+        <label for="college">Your college <span class="muted">(optional, search all of India)</span></label>
+        <input type="text" id="college" name="college" value="<?= e($values['college']) ?>" list="college-list" autocomplete="off" maxlength="255"
+               placeholder="Type 3+ letters, e.g. IIM Indore" data-search="<?= e(url('colleges.php')) ?>" class="<?= invalid($errors, 'college') ?>">
+        <datalist id="college-list"></datalist>
+        <div class="hint">Not listed? Just type its full name.</div>
+        <?= error_box($errors, 'college') ?>
     </div>
-
-    <fieldset class="form-group">
-        <legend>How tidy are you, honestly?</legend>
-        <?= pills('cleanliness', CLEANLINESS_LEVELS, (string) $values['cleanliness'], $errors) ?>
-        <?= error_box($errors, 'cleanliness') ?>
+    <fieldset class="form-group"><legend>You are</legend>
+        <?= pills('college_status', ['incoming' => 'Incoming student', 'current' => 'Currently enrolled', 'other' => 'Not a student'], $values['college_status'], $errors) ?>
+    </fieldset>
+    <fieldset class="form-group"><legend>Who can see your profile?</legend>
+        <?= pills('visibility', VISIBILITY_OPTIONS, $values['visibility'], $errors) ?>
+        <div class="hint">Your email is never shown because of your college.</div>
+        <?= error_box($errors, 'visibility') ?>
     </fieldset>
 
-    <div class="row-3">
-        <fieldset class="form-group"><legend>Do you smoke?</legend><?= pills('smoking', $yesNo, $values['smoking'], $errors) ?><?= error_box($errors, 'smoking') ?></fieldset>
-        <fieldset class="form-group"><legend>Do you drink?</legend><?= pills('drinking', $yesNo, $values['drinking'], $errors) ?><?= error_box($errors, 'drinking') ?></fieldset>
-        <fieldset class="form-group"><legend>Do you have a pet?</legend><?= pills('pets', $yesNo, $values['pets'], $errors) ?><?= error_box($errors, 'pets') ?></fieldset>
-    </div>
-
-    <h3 class="form-section-title"><span class="step-no">4</span> What you're okay with in a flatmate</h3>
-    <p class="hint" style="margin-top:-8px">This is what matching uses. Being open-minded gets you more good matches.</p>
-
-    <fieldset class="form-group"><legend>Living with someone who smokes?</legend><?= pills('ok_smoking', TOLERANCE_OPTIONS, $values['ok_smoking'], $errors) ?><?= error_box($errors, 'ok_smoking') ?></fieldset>
-    <fieldset class="form-group"><legend>Living with someone who drinks?</legend><?= pills('ok_drinking', TOLERANCE_OPTIONS, $values['ok_drinking'], $errors) ?><?= error_box($errors, 'ok_drinking') ?></fieldset>
-    <fieldset class="form-group"><legend>Living with a pet?</legend><?= pills('ok_pets', TOLERANCE_OPTIONS, $values['ok_pets'], $errors) ?><?= error_box($errors, 'ok_pets') ?></fieldset>
-
-    <fieldset class="form-group">
-        <legend>The messiest flatmate you could live with</legend>
-        <?= pills('min_cleanliness', CLEANLINESS_LEVELS, (string) $values['min_cleanliness'], $errors) ?>
-        <?= error_box($errors, 'min_cleanliness') ?>
-    </fieldset>
-
-    <fieldset class="form-group">
-        <legend>How different can their bedtime be from yours?</legend>
-        <?= pills('sleep_flex', SLEEP_FLEX_OPTIONS, (string) $values['sleep_flex'], $errors) ?>
-        <?= error_box($errors, 'sleep_flex') ?>
-    </fieldset>
-
-    <h3 class="form-section-title"><span class="step-no">5</span> A bit more</h3>
-
+    <h3 class="form-section-title"><span class="step-no">4</span> A bit more</h3>
     <fieldset class="form-group">
         <legend>Languages you're comfortable chatting in <span class="muted small">(optional, never used for matching)</span></legend>
         <div class="pill-group<?= invalid($errors, 'languages') ?>" data-field="languages[]">
@@ -192,33 +165,54 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
         <?= error_box($errors, 'bio') ?>
     </div>
 
-    <h3 class="form-section-title"><span class="step-no">6</span> Lifestyle quiz <span class="muted small">(optional)</span></h3>
-    <p class="muted small">Five quick questions about day-to-day habits. Neither end is the "good" answer, and you can skip any question.</p>
-    <?php foreach (LIFESTYLE_QUESTIONS as $key => $q): ?>
-        <fieldset class="form-group quiz-q">
-            <legend><?= e($q['ask']) ?></legend>
-            <div class="scale5<?= invalid($errors, $key) ?>">
-                <span class="scale-end"><?= e($q['low']) ?></span>
-                <?php for ($v = 0; $v <= 4; $v++): ?>
-                    <label class="scale-dot"><input type="radio" name="<?= $key ?>" value="<?= $v ?>" <?= (string) $values[$key] === (string) $v ? 'checked' : '' ?> aria-label="<?= $v + 1 ?> of 5"><span></span></label>
-                <?php endfor; ?>
-                <span class="scale-end"><?= e($q['high']) ?></span>
-                <button type="button" class="link-btn small quiz-skip">Skip</button>
-            </div>
-            <?= error_box($errors, $key) ?>
-        </fieldset>
-    <?php endforeach; ?>
 
-    <div class="form-group">
-        <label for="household_note">Are there traditions or household routines you'd like a flatmate to respect? <span class="muted">(optional, not scored)</span></label>
-        <textarea id="household_note" name="household_note" maxlength="300" class="<?= invalid($errors, 'household_note') ?>"><?= e($values['household_note']) ?></textarea>
-        <?= error_box($errors, 'household_note') ?>
+    <h3 class="form-section-title"><span class="step-no">5</span> Religious and cultural preferences <span class="muted small">(if any)</span></h3>
+    <p class="muted small">All optional. Used only as a Discover filter, never in your score.</p>
+    <div class="row-2">
+        <div class="form-group"><label for="religion">Your religion</label>
+            <select id="religion" name="religion"><?php foreach (RELIGION_OPTIONS as $r): ?><option <?= $values['religion'] === $r ? 'selected' : '' ?>><?= e($r) ?></option><?php endforeach; ?></select></div>
+        <div class="form-group"><label for="religion_pref">In flatmates</label>
+            <select id="religion_pref" name="religion_pref"><?php foreach (RELIGION_PREFS as $k => $r): ?><option value="<?= $k ?>" <?= $values['religion_pref'] === $k ? 'selected' : '' ?>><?= e($r) ?></option><?php endforeach; ?></select></div>
     </div>
+    <div class="form-group"><label for="culture_note">Anything flatmates should know? <span class="muted">(optional)</span></label>
+        <textarea id="culture_note" name="culture_note" maxlength="300" placeholder="e.g. I light a diya every evening · I fast during Ramadan"><?= e($values['culture_note']) ?></textarea>
+        <?= error_box($errors, 'culture_note') ?></div>
 
-    <div class="form-group">
-        <label for="phone">Phone number <span class="muted">(optional, private: only shared when you choose to, with one connection at a time)</span></label>
-        <input type="tel" id="phone" name="phone" value="<?= e($values['phone']) ?>" placeholder="98765 43210" class="<?= invalid($errors, 'phone') ?>">
-        <?= error_box($errors, 'phone') ?>
+    <h3 class="form-section-title"><span class="step-no">6</span> Flat in mind</h3>
+    <fieldset class="form-group"><legend>Where are you with finding a flat?</legend>
+        <div class="stage-cards">
+            <?php foreach (FLAT_STAGES as $k => [$icon, $label]): ?>
+                <label class="stage-card"><input type="radio" name="flat_stage" value="<?= $k ?>" <?= (string) $values['flat_stage'] === (string) $k ? 'checked' : '' ?>><span><i aria-hidden="true"><?= $icon ?></i><?= e($label) ?></span></label>
+            <?php endforeach; ?>
+        </div>
+        <?= error_box($errors, 'flat_stage') ?>
+    </fieldset>
+    <details class="form-group" <?= $values['flat_area'] || $values['flat_desc'] ? 'open' : '' ?>>
+        <summary><strong>Flat details</strong> <span class="muted small">(optional, edit or clear any time)</span></summary>
+        <div class="form-group"><label for="flat_desc">Short description</label><input id="flat_desc" name="flat_desc" maxlength="200" value="<?= e($values['flat_desc']) ?>" placeholder="e.g. 3BHK, one room free from January"></div>
+        <div class="row-2">
+            <div class="form-group"><label for="flat_area">Area</label><input id="flat_area" name="flat_area" maxlength="100" value="<?= e($values['flat_area']) ?>"></div>
+            <div class="form-group"><label for="flat_rent">Rent for the room (₹/month)</label><input id="flat_rent" name="flat_rent" inputmode="numeric" value="<?= e($values['flat_rent']) ?>" class="<?= invalid($errors, 'flat_rent') ?>"><?= error_box($errors, 'flat_rent') ?></div>
+        </div>
+        <div class="form-group"><label>Location on the map <span class="muted">(people who haven't connected with you see only the rough area)</span></label>
+            <?= location_picker('flat', $values['flat_lat'], $values['flat_lng'], 'Set flat location') ?></div>
+        <div class="form-group"><label for="flat_photo">Photo of the flat</label><input type="file" id="flat_photo" name="flat_photo" accept="image/jpeg,image/png"><?= error_box($errors, 'flat_photo') ?>
+            <?php if (!empty($values['flat_photo'])): ?><label class="small"><input type="checkbox" name="flat_photo_remove" value="1"> Remove current photo</label><?php endif; ?></div>
+        <label class="small"><input type="checkbox" name="flat_clear" value="1"> Clear all flat details</label>
+    </details>
+
+    <h3 class="form-section-title"><span class="step-no">7</span> Distance <span class="muted small">(private)</span></h3>
+    <div class="form-group"><label>Your campus, workplace or home <span class="muted">(never shown to anyone, only used for distances)</span></label>
+        <?= location_picker('ref', $values['ref_lat'], $values['ref_lng'], 'Set my reference point') ?></div>
+    <div class="form-group"><label for="radius_km">How far are you willing to live from it? <strong id="radius-out"><?= (int) ($values['radius_km'] ?: 8) ?> km</strong></label>
+        <input type="range" id="radius_km" name="radius_km" min="1" max="50" value="<?= (int) ($values['radius_km'] ?: 8) ?>" oninput="document.getElementById('radius-out').textContent=this.value+' km'"></div>
+
+    <h3 class="form-section-title"><span class="step-no">8</span> Contact details <span class="muted small">(private)</span></h3>
+    <p class="muted small">Never on your profile. After you connect with someone, you choose which of these to share with them.</p>
+    <div class="row-3">
+        <div class="form-group"><label for="phone">Phone</label><input type="tel" id="phone" name="phone" value="<?= e($values['phone']) ?>" placeholder="98765 43210" class="<?= invalid($errors, 'phone') ?>"><?= error_box($errors, 'phone') ?></div>
+        <div class="form-group"><label for="contact_email">Email to share</label><input type="email" id="contact_email" name="contact_email" value="<?= e($values['contact_email']) ?>" class="<?= invalid($errors, 'contact_email') ?>"><?= error_box($errors, 'contact_email') ?></div>
+        <div class="form-group"><label for="instagram">Instagram</label><input id="instagram" name="instagram" value="<?= e($values['instagram']) ?>" placeholder="@yourname" class="<?= invalid($errors, 'instagram') ?>"><?= error_box($errors, 'instagram') ?></div>
     </div>
 
     <div class="form-actions">
@@ -237,10 +231,9 @@ $languageList = json_encode(LANGUAGE_OPTIONS);
 $avatarIds    = json_encode(AVATAR_IDS);
 $hasUpload    = json_encode((bool) ($currentPhoto && !str_starts_with($currentPhoto, 'avatar:')));
 $avatarizeJs  = e(url('js/avatarize.js'));
-$extraScripts = <<<HTML
+$extraScripts = ($extraScripts ?? '') . <<<HTML
 <script src="$avatarizeJs?v=1"></script>
 <script>
-document.querySelectorAll('.quiz-skip').forEach(function (b) { b.addEventListener('click', function () { b.closest('.scale5').querySelectorAll('input').forEach(function (i) { i.checked = false; }); }); });
 const ALLOWED_LANGUAGES = $languageList;
 const AVATAR_IDS = $avatarIds;
 const HAS_UPLOAD = $hasUpload;
@@ -274,18 +267,9 @@ RM.validateForm(profileForm, function (form) {
         errors.budget_max = 'Maximum must be more than the minimum.';
     }
 
-    if (!RM.isIntInRange(form.sleep_slot.value, 1, 5)) errors.sleep_slot = 'Pick your usual bedtime.';
-    if (!RM.isIntInRange(RM.radioValue(form, 'cleanliness'), 1, 5)) errors.cleanliness = 'Pick how tidy you are.';
-    if (!oneOf(RM.radioValue(form, 'smoking'), ['yes', 'no']))  errors.smoking  = 'Tell us whether you smoke.';
-    if (!oneOf(RM.radioValue(form, 'drinking'), ['yes', 'no'])) errors.drinking = 'Tell us whether you drink.';
-    if (!oneOf(RM.radioValue(form, 'pets'), ['yes', 'no']))     errors.pets     = 'Tell us whether you have pets.';
-
-    const ok = ['yes', 'maybe', 'no'];
-    if (!oneOf(RM.radioValue(form, 'ok_smoking'), ok))  errors.ok_smoking  = "Tell us if you're okay living with a smoker.";
-    if (!oneOf(RM.radioValue(form, 'ok_drinking'), ok)) errors.ok_drinking = "Tell us if you're okay living with someone who drinks.";
-    if (!oneOf(RM.radioValue(form, 'ok_pets'), ok))     errors.ok_pets     = "Tell us if you're okay living with pets.";
-    if (!RM.isIntInRange(RM.radioValue(form, 'min_cleanliness'), 1, 5)) errors.min_cleanliness = 'Pick the messiest flatmate you could live with.';
-    if (!oneOf(RM.radioValue(form, 'sleep_flex'), ['0', '1', '2', '4'])) errors.sleep_flex = 'Pick how different a bedtime you are okay with.';
+    if (form.flat_rent.value.trim() !== '' && !RM.isIntInRange(form.flat_rent.value, 500, 200000)) errors.flat_rent = 'Enter a whole number of rupees from 500 to 2,00,000.';
+    if (form.contact_email.value.trim() !== '' && !RM.isEmail(form.contact_email.value)) errors.contact_email = 'Enter a valid email.';
+    if (form.instagram.value.trim() !== '' && !/^@?[A-Za-z0-9._]{1,30}$/.test(form.instagram.value.trim())) errors.instagram = 'Letters, numbers, dots and underscores only.';
 
     const langs = RM.checkedValues(form, 'languages[]');
     if (!langs.every(function (l) { return ALLOWED_LANGUAGES.includes(l); })) errors['languages[]'] = 'Pick languages from the list only.';
@@ -294,6 +278,19 @@ RM.validateForm(profileForm, function (form) {
     return errors;
 });
 
+// College search: suggestions from all of India as you type (colleges.php)
+(function () {
+    const box = document.getElementById('college'), list = document.getElementById('college-list'); let t;
+    box.addEventListener('input', function () {
+        clearTimeout(t); if (box.value.trim().length < 3) return;
+        t = setTimeout(async function () {
+            try {
+                const res = await (await fetch(box.dataset.search + '?q=' + encodeURIComponent(box.value))).json();
+                list.innerHTML = res.map(function (c) { const o = document.createElement('option'); o.value = c.name; o.label = c.place; return o.outerHTML; }).join('');
+            } catch (e) {}
+        }, 250);
+    });
+})();
 RM.charCounter(profileForm.bio, document.getElementById('bio-count'), 300);
 
 // Show the upload box only when "Upload photo" is picked

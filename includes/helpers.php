@@ -145,3 +145,17 @@ function is_representative_photo(?string $photo): bool
 {
     return (bool) ($photo && str_starts_with($photo, 'https://'));
 }
+
+/** Who can see a profile on Discover */
+const VISIBILITY_OPTIONS = ['everyone' => 'Everyone', 'college' => 'My college only', 'search' => 'Only in search'];
+
+/** Religion (optional, profile and filter only — never scored) */
+const RELIGION_OPTIONS = ['Prefer not to say', 'Hinduism', 'Islam', 'Christianity', 'Sikhism', 'Buddhism', 'Jainism',
+    'Zoroastrianism (Parsi)', 'Judaism', "Bahá'í Faith", 'Tribal / indigenous faith', 'Spiritual, not religious', 'Atheist / agnostic', 'Other'];
+const RELIGION_PREFS = ['any' => 'No preference', 'same' => 'Prefer the same religion as me', 'open' => 'Comfortable with different routines in shared spaces'];
+
+/** Flat-search stage: [icon, label] */
+const FLAT_STAGES = [1 => ['🌱', "Haven't started"], 2 => ['🗺️', 'Exploring areas'], 3 => ['⚖️', 'Comparing options'],
+    4 => ['📌', 'Shortlisted a flat'], 5 => ['🔑', 'Chosen a flat']];
+
+require_once __DIR__ . '/map.php';

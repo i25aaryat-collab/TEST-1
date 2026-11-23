@@ -37,27 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $photo = resolve_picture($values['avatar'], $_FILES['photo'] ?? null, $_SESSION['user_id'], null, $errors);
     }
 
+    $flatPhoto = null;
+    if (!$errors) $flatPhoto = resolve_flat_photo(null, $errors, $_SESSION['user_id']);
     if (!$errors) {
-        $stmt = $pdo->prepare('
-            INSERT INTO profiles
-                (user_id, age, gender, city, budget_min, budget_max, sleep_slot, cleanliness,
-                 smoking, drinking, pets, languages, bio, photo,
-                 ok_smoking, ok_drinking, ok_pets, min_cleanliness, sleep_flex,
-                 q_clean, q_quiet, q_meals, q_guests, q_chores, household_note, phone)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ');
-        $stmt->execute([
-            $_SESSION['user_id'], (int) $values['age'], $values['gender'], $values['city'],
-            (int) $values['budget_min'], (int) $values['budget_max'], (int) $values['sleep_slot'],
-            (int) $values['cleanliness'], $values['smoking'], $values['drinking'], $values['pets'],
-            languages_to_string($values['languages']), $values['bio'], $photo,
-            $values['ok_smoking'], $values['ok_drinking'], $values['ok_pets'],
-            (int) $values['min_cleanliness'], (int) $values['sleep_flex'],
-            quiz_value($values['q_clean']), quiz_value($values['q_quiet']), quiz_value($values['q_meals']),
-            quiz_value($values['q_guests']), quiz_value($values['q_chores']), $values['household_note'], $values['phone'] ?: null,
-        ]);
-        set_flash('success', 'Your profile is live! Here are your best matches in ' . $values['city'] . '.');
-        redirect('swipe/swipe.php');
+        save_profile($pdo, (int) $_SESSION['user_id'], $values, $photo, $flatPhoto, true);
+        set_flash('success', 'Profile saved. Now the compatibility test: it decides your score with each person.');
+        redirect('profile/test.php');
     }
 }
 
@@ -70,8 +55,8 @@ require __DIR__ . '/../includes/header.php';
 <div class="container container-narrow">
     <div class="page-head">
         <div>
-            <h1>Your compatibility test</h1>
-            <p class="muted">A two-minute compatibility test. Your answers decide who you see and your score with each person.</p>
+            <h1>Set up your profile</h1>
+            <p class="muted">Step 1 of 2: the basics. Next comes the compatibility test.</p>
         </div>
     </div>
     <?php if ($errors): ?>

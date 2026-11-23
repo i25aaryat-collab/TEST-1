@@ -24,7 +24,11 @@ function home_for_logged_in_user(PDO $pdo): string
     if (is_admin()) return 'admin/dashboard.php';
     $stmt = $pdo->prepare('SELECT 1 FROM profiles WHERE user_id = ?');
     $stmt->execute([$_SESSION['user_id']]);
-    return $stmt->fetch() ? 'swipe/swipe.php' : 'profile/create_profile.php';
+    if (!$stmt->fetch()) return 'profile/create_profile.php';
+    // Came from a community invite link? Go back to it (only that one safe path).
+    $next = $_SESSION['after_login'] ?? '';
+    unset($_SESSION['after_login']);
+    return preg_match('#^communities/join\.php\?c=[a-z0-9]+$#', $next) ? $next : 'swipe/swipe.php';
 }
 
 // Already logged in? No need to see this page.

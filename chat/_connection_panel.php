@@ -8,26 +8,26 @@
  *   - links to the Roomie Pact and a shared flat shortlist
  * Expects: $pdo, $match, $myId, $matchId, $firstName, $messages
  */
-require_once __DIR__ . '/../swipe/lifestyle.php';
+require_once __DIR__ . '/../swipe/compatibility.php';
 
 $pp = $pdo->prepare('SELECT * FROM profiles WHERE user_id = ?');
 $pp->execute([$myId]);               $meP   = $pp->fetch() ?: [];
 $pp->execute([$match['other_id']]);  $themP = $pp->fetch() ?: [];
-$align = lifestyle_alignment($meP, $themP);
+$align = compatibility_result($meP, $themP);
 
-// Phone sharing: each direction is its own row. I only ever receive THEIR number
-// if THEY created a share row for me.
-$sh = $pdo->prepare('SELECT 1 FROM phone_shares WHERE sharer_id = ? AND viewer_id = ?');
-$sh->execute([$myId, $match['other_id']]);  $iShared = (bool) $sh->fetchColumn();
-$sh->execute([$match['other_id'], $myId]);  $theyShared = (bool) $sh->fetchColumn();
-$theirPhone = $theyShared ? ($themP['phone'] ?? '') : '';
-$myPhone = $meP['phone'] ?? '';
+// Contact sharing, per field and per direction. I only ever receive a detail of
+// THEIRS if THEY created a share row for me (checked here, on the server).
+const CONTACT_FIELDS = ['phone' => ['📞', 'Phone'], 'email' => ['✉️', 'Email'], 'instagram' => ['📷', 'Instagram']];
+$contactValue = fn(array $p, string $f) => (string) ($f === 'email' ? ($p['contact_email'] ?? '') : ($p[$f] ?? ''));
+$sh = $pdo->prepare('SELECT field FROM contact_shares WHERE sharer_id = ? AND viewer_id = ?');
+$sh->execute([$myId, $match['other_id']]);  $iShared = $sh->fetchAll(PDO::FETCH_COLUMN);
+$sh->execute([$match['other_id'], $myId]);  $theyShared = $sh->fetchAll(PDO::FETCH_COLUMN);
 
 $agenda = [];
 if ($align['discuss']) $agenda[] = $align['discuss'];
 $agenda[] = 'What does your monthly budget need to cover (rent, food, Wi-Fi, help)?';
 $agenda[] = 'How much notice feels fair before guests come over?';
-if (!empty($themP['household_note'])) $agenda[] = 'Ask about the routines ' . $firstName . ' mentioned: "' . $themP['household_note'] . '"';
+if (!empty($themP['culture_note'])) $agenda[] = 'Ask about what ' . $firstName . ' mentioned: "' . $themP['culture_note'] . '"';
 
 $pact = $pdo->prepare('SELECT accepted_by, proposed_by FROM pacts WHERE match_id = ?');
 $pact->execute([$matchId]); $pactRow = $pact->fetch();
@@ -44,32 +44,31 @@ $pactLabel = !$pactRow ? 'Make a Roomie Pact' : ($pactRow['accepted_by'] ? 'View
     <details class="panel-block" open>
         <summary>Things worth talking about</summary>
         <?php if ($align['score'] !== null): ?>
-            <p class="small"><strong>Lifestyle alignment <?= $align['score'] ?>%</strong> <span class="muted">· <?= $align['compared'] ?> of 5 compared</span><?= $align['shared'] ? ' · ' . e($align['shared']) : '' ?></p>
+            <?= score_line($align) ?>
         <?php endif; ?>
         <ol class="agenda small"><?php foreach ($agenda as $a): ?><li><?= e($a) ?></li><?php endforeach; ?></ol>
         <p class="tiny muted">Just prompts. You don't need to tick anything off.</p>
     </details>
 
-    <div class="panel-block phone-block" id="phone-block">
-        <?php if ($theirPhone): ?>
-            <p class="small">📞 <?= e($firstName) ?> shared their number with you: <strong><?= e($theirPhone) ?></strong></p>
-        <?php endif; ?>
-        <?php if ($iShared): ?>
-            <form method="post" action="<?= e(url('chat/phone_share.php')) ?>" class="inline-form">
-                <?= csrf_field() ?><input type="hidden" name="match_id" value="<?= (int) $matchId ?>"><input type="hidden" name="action" value="unshare">
-                <span class="small">You shared your number with <?= e($firstName) ?>.</span>
-                <button class="link-btn small" type="submit">Stop sharing</button>
+    <div class="panel-block contact-block">
+        <?php foreach ($theyShared as $f): if ($contactValue($themP, $f) === '') continue; ?>
+            <p class="small"><?= CONTACT_FIELDS[$f][0] ?> <?= e($firstName) ?> shared their <?= strtolower(CONTACT_FIELDS[$f][1]) ?>: <strong><?= e($contactValue($themP, $f)) ?></strong></p>
+        <?php endforeach; ?>
+        <details class="share-box" <?= $iShared ? '' : 'open' ?>>
+            <summary><strong>Share contact details with <?= e($firstName) ?></strong> <span class="muted small">(off unless you switch it on)</span></summary>
+            <form method="post" action="<?= e(url('chat/contact_share.php')) ?>" class="share-form"
+                  data-confirm="<?= e($firstName) ?> will see exactly the details you switched on, in this chat only. You won't see <?= e($firstName) ?>'s unless they share too. You can turn these off any time."
+                  data-confirm-button="Save sharing">
+                <?= csrf_field() ?><input type="hidden" name="match_id" value="<?= (int) $matchId ?>">
+                <?php foreach (CONTACT_FIELDS as $f => [$icon, $label]): $v = $contactValue($meP, $f); ?>
+                    <label class="share-row">
+                        <span><?= $icon ?> <?= $label ?> · <?= $v !== '' ? '<span class="muted">' . e($v) . '</span>' : '<a href="' . e(url('profile/edit_profile.php')) . '">add on your profile</a>' ?></span>
+                        <span class="switch"><input type="checkbox" name="fields[]" value="<?= $f ?>" <?= in_array($f, $iShared, true) ? 'checked' : '' ?> <?= $v === '' ? 'disabled' : '' ?>><span></span></span>
+                    </label>
+                <?php endforeach; ?>
+                <div class="btn-row"><button class="btn btn-sm">Review and save</button><button class="link-btn small js-not-now" type="button">Not now</button></div>
             </form>
-        <?php else: ?>
-            <form method="post" action="<?= e(url('chat/phone_share.php')) ?>" class="inline-form phone-share-form"
-                  data-confirm="<?= e($firstName) ?> will see <?= $myPhone ? 'your number ' . e($myPhone) : 'the number you entered' ?> in this chat. Nobody else will. You won't see <?= e($firstName) ?>'s number unless they share it too."
-                  data-confirm-button="Share my number">
-                <?= csrf_field() ?><input type="hidden" name="match_id" value="<?= (int) $matchId ?>"><input type="hidden" name="action" value="share">
-                <?php if (!$myPhone): ?><input type="tel" name="phone" placeholder="Your mobile number" aria-label="Your mobile number" required><?php endif; ?>
-                <button class="btn btn-sm" type="submit">Share my phone number with <?= e($firstName) ?></button>
-                <button class="link-btn small js-not-now" type="button">Not now</button>
-            </form>
-        <?php endif; ?>
+        </details>
     </div>
 
     <div class="panel-links small">
@@ -81,8 +80,8 @@ $pactLabel = !$pactRow ? 'Make a Roomie Pact' : ($pactRow['accepted_by'] ? 'View
 <script>
 (function () {
     const b = document.querySelector('.js-not-now'); if (!b) return;
-    const key = 'rm-phone-notnow-' + <?= (int) $matchId ?>;
-    try { if (localStorage.getItem(key)) b.closest('form').hidden = true; } catch (e) {}
-    b.addEventListener('click', function () { b.closest('form').hidden = true; try { localStorage.setItem(key, '1'); } catch (e) {} });
+    const key = 'rm-share-notnow-' + <?= (int) $matchId ?>;
+    try { if (localStorage.getItem(key)) b.closest('details').open = false; } catch (e) {}
+    b.addEventListener('click', function () { b.closest('details').open = false; try { localStorage.setItem(key, '1'); } catch (e) {} });
 })();
 </script>

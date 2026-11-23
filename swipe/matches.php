@@ -54,7 +54,7 @@ foreach ($matches as &$m) {
 unset($m);
 
 usort($matches, fn($a, $b) => match ($sort) {
-    'best'  => $b['score'] <=> $a['score'],
+    'best'  => ($b['score'] ?? -1) <=> ($a['score'] ?? -1),
     'name'  => strcasecmp($a['name'], $b['name']),
     default => strcmp($b['matched_at'], $a['matched_at']),
 });
@@ -83,7 +83,7 @@ require __DIR__ . '/../includes/header.php';
                             <a href="<?= e(url('profile/view_profile.php?id=' . (int) $r['uid'])) ?>"><strong><?= e($r['name']) ?>, <?= (int) $r['age'] ?></strong></a>
                             <div class="muted small"><?= e($r['city']) ?> · sent <?= e(nice_date($r['sent_at'])) ?></div>
                         </div>
-                        <span class="score <?= score_class($r['score']) ?>"><?= (int) $r['score'] ?>%</span>
+                        <span class="score <?= score_class($r['score']) ?>"><?= $r['score'] === null ? 'Not enough answers' : $r['score'] . '%' ?></span>
                         <div class="btn-row">
                             <button type="button" class="btn btn-primary btn-sm js-accept">Accept</button>
                             <button type="button" class="btn btn-ghost btn-sm js-decline">Decline</button>
@@ -130,7 +130,7 @@ require __DIR__ . '/../includes/header.php';
                             <h3><?= e($m['name']) ?>, <?= (int) $m['age'] ?></h3>
                             <div class="muted small"><?= e($m['city']) ?> · matched <?= e(nice_date($m['matched_at'])) ?></div>
                         </div>
-                        <div><span class="score <?= score_class($m['score']) ?>"><?= (int) $m['score'] ?>% compatible</span></div>
+                        <div><span class="score <?= score_class($m['score']) ?>"><?= $m['score'] === null ? 'Not enough answers yet' : $m['score'] . '% compatible' ?></span> <a class="info-i" href="<?= e(url('how-matching-works.php')) ?>" title="How matching works">ⓘ</a></div>
                         <div class="btn-row">
                             <a class="btn btn-primary btn-sm" href="<?= e(url('chat/conversation.php?match_id=' . (int) $m['match_id'])) ?>">Chat</a>
                             <a class="btn btn-sm" href="<?= e(url('profile/view_profile.php?id=' . (int) $m['uid'])) ?>">View profile</a>
