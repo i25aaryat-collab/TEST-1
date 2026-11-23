@@ -4,108 +4,112 @@
  * --------------------------------------------------------------------------
  * The compatibility score, from the RoomieMatch test (profile/test.php).
  *
- *  - Every question is a 1–5 slider. Answers are stored in profiles.answers
- *    as JSON {"bedtime":3,...}. A skipped question is simply missing:
- *    it is never treated as a low value or as a disagreement.
- *  - Fit per question = 100 - 25 x |A - B|   (same 100, 1 step 75 … 4 steps 0)
- *  - Age: each person says which ages they're fine living with
- *    (profiles.age_min / age_max). Each year outside the other's range costs
- *    25, checked both ways; the worse direction counts. Weight: AGE_WEIGHT.
- *  - Score = weighted average over questions BOTH people answered.
+ *  - The twenty questions use 0..100 sliders stored in profiles.answers JSON.
+ *  - Fit per question = 100 - the distance between two answers.
+ *  - Every question has equal weight. A skipped answer is excluded.
  *  - Fewer than MIN_SHARED shared answers -> no score ("Not enough answers yet").
  *  - Budget and city are Discover filters, not part of the score.
- *  - Religion and culture are never scored (see CULTURE_* on the profile).
- * Weights and questions live here only, so they're easy to tune.
+ *  - Religion and culture questions count only when both people answer them.
+ * Questions live here so labels and scoring stay in sync.
  * ========================================================================== */
 
-const AGE_WEIGHT = 3;        // age counts as much as three ordinary questions
-const MIN_SHARED = 5;        // shared answers needed before a score is shown
+const MIN_SHARED = 5;
 
-/** Sections in order: label => [ key => [question, low end, high end, value labels|null, weight] ] */
 const TEST_SECTIONS = [
     'Sleep and daily rhythm' => [
-        'bedtime'  => ['What time do you usually go to bed?', '8–9 pm', '3 am or later', ['8–9 pm', '10–11 pm', 'Around midnight', '1–2 am', '3 am or later'], 1],
-        'waketime' => ['What time do you usually wake up?', '5–6 am', '11 am or later', ['5–6 am', '7 am', '8 am', '9–10 am', '11 am or later'], 1],
-        'light'    => ['How much light do you like in the room while sleeping?', 'Pitch dark', 'Bright lights on', null, 1],
-        'noise'    => ['How much noise are you comfortable with when sleeping or studying?', 'As quiet as possible', 'Normal household noise', null, 1],
+        'bedtime' => ['What time do you usually go to bed?', 'Around 8 pm', '3 am or later', 'bedtime'],
+        'waketime' => ['What time do you usually wake up?', 'Around 5 am', '11 am or later', 'waketime'],
+        'light' => ['How much light do you like in the room while sleeping?', 'Pitch dark', 'Bright lights on', 'scale'],
+        'noise' => ['How much noise are you comfortable with when sleeping or studying?', 'As quiet as possible', 'Normal household noise is fine', 'scale'],
     ],
-    'Cleanliness' => [
-        'tidy'     => ['How tidy do you like shared spaces to be?', 'Relaxed, lived-in', 'Very neat', null, 1],
-        'dishes'   => ['How soon do you prefer dishes to be washed after eating?', 'Later is fine', 'Right away', null, 1],
-        'help'     => ['How often would you prefer professional cleaning help?', 'Not at all', 'Several times a week', null, 1],
+    'Cleanliness and chores' => [
+        'tidy' => ['How tidy do you like shared spaces to be?', 'Relaxed and lived-in', 'Very neat and orderly', 'scale'],
+        'dishes' => ['How soon do you prefer dishes to be washed after eating?', 'Later is fine', 'Right away', 'scale'],
+        'chores' => ['How structured should shared chores be?', 'Handle them as they come up', 'Follow a regular rota', 'scale'],
+        'help' => ['How often would you prefer professional cleaning help at home?', 'Not at all', 'Several times a week', 'scale'],
     ],
     'Guests and shared space' => [
-        'day_guests' => ['How often are you comfortable having daytime guests at home?', 'Rarely', 'Very often', null, 1],
-        'overnight'  => ['How comfortable are you with overnight guests?', 'Prefer to avoid', 'Comfortable often', null, 1],
-        'notice'     => ['How much notice do you prefer before a flatmate invites guests?', 'Little or none', 'Always discuss first', null, 1],
-        'shared'     => ['How do you like to use shared spaces?', 'Quiet and private', 'Social and shared', null, 1],
+        'day_guests' => ['How often are you comfortable having daytime guests at home?', 'Rarely', 'Very often', 'scale'],
+        'overnight' => ['How comfortable are you with overnight guests?', 'Prefer to avoid them', 'Comfortable with them often', 'scale'],
+        'notice' => ['How much advance notice do you prefer before a roommate invites guests?', 'Little or none', 'Always discuss it beforehand', 'scale'],
+        'shared' => ['How do you like to use shared spaces?', 'Mostly quiet and private', 'Social and shared often', 'scale'],
     ],
-    'Food at home' => [
-        'nonveg'     => ['How comfortable are you with non-vegetarian food cooked in the shared kitchen?', 'Not comfortable', 'Completely comfortable', null, 1],
-        'groceries'  => ['How do you prefer to handle groceries and food?', 'Keep separate', 'Share most', null, 1],
-        'culture'    => ['How often are religious or cultural practices part of your home routine?', 'Rarely or never', 'Daily', null, 0],   // optional, not scored
+    'Food and household practices' => [
+        'nonveg' => ['How comfortable are you with non-vegetarian food being cooked in the shared kitchen?', 'Not comfortable', 'Completely comfortable', 'scale'],
+        'groceries' => ['How do you prefer to handle groceries and food at home?', 'Keep everything separate', 'Share most groceries and meals', 'scale'],
+        'culture' => ['How often are religious or cultural practices part of your home routine?', 'Rarely or never', 'A regular part of daily life', 'scale'],
+        'religion_diff' => ['How comfortable are you sharing a home with someone whose religious or cultural routines differ from yours?', 'Prefer routines to stay private', 'Comfortable with different routines in shared spaces', 'scale'],
     ],
     'Comfort and boundaries' => [
-        'pets'       => ['How comfortable are you living with pets?', 'Not comfortable', 'Very comfortable', null, 1],
-        'smoking'    => ['How comfortable are you with smoking or vaping around the home?', 'Not comfortable', 'Very comfortable', null, 1],
-        'drinking'   => ['How comfortable are you with alcohol or drinking around the house?', 'Not comfortable', 'Very comfortable', null, 1],
-        'ac_temp'    => ['What AC temperature do you usually prefer?', '18°C', '30°C', ['18°C', '21°C', '24°C', '27°C', '30°C'], 1],
-        'ac_use'     => ['How much AC use and shared electricity cost are you okay with?', 'Minimal AC', 'Often, share the cost', null, 1],
+        'pets' => ['How comfortable are you living with pets?', 'Not comfortable', 'Very comfortable', 'scale'],
+        'smoking' => ['How comfortable are you with smoking or vaping around the home?', 'Not comfortable', 'Very comfortable', 'scale'],
+        'ac_temp' => ['What AC temperature do you usually prefer?', '18°C', '30°C', 'temperature'],
+        'ac_use' => ['How much AC use and shared electricity cost are you comfortable with?', 'Prefer minimal AC use', 'Comfortable using it often and sharing the cost', 'scale'],
     ],
 ];
 
-/** Every question key => its definition (flat list) */
 function test_questions(): array
 {
     $all = [];
-    foreach (TEST_SECTIONS as $section => $qs) foreach ($qs as $k => $q) $all[$k] = $q + ['section' => $section];
+    foreach (TEST_SECTIONS as $section => $questions) {
+        foreach ($questions as $key => $question) $all[$key] = $question + ['section' => $section];
+    }
     return $all;
 }
 
-/** A profile's answers as [key => 1..5] (skipped keys are absent) */
-function test_answers(array $p): array
+/** Stored answers are normalized to 0..100. Older 1..5 scores are expanded to that scale. */
+function test_answers(array $profile): array
 {
-    $a = json_decode((string) ($p['answers'] ?? ''), true);
-    return is_array($a) ? array_filter($a, fn($v) => is_int($v) && $v >= 1 && $v <= 5) : [];
-}
+    $payload = json_decode((string) ($profile['answers'] ?? ''), true);
+    if (!is_array($payload)) return [];
+    $isCurrentScale = (int) ($payload['_scale'] ?? 0) === 100;
+    unset($payload['_scale']);
 
-/** Age fit 0..100, or null if either side gave no range */
-function age_fit(array $a, array $b): ?float
-{
-    if (empty($a['age_min']) || empty($b['age_min'])) return null;
-    $out = fn($age, $p) => max(0, (int) $p['age_min'] - $age, $age - (int) $p['age_max']);
-    $worst = max($out((int) $a['age'], $b), $out((int) $b['age'], $a));
-    return max(0, 100 - 25 * $worst);
+    $answers = [];
+    foreach (test_questions() as $key => $_question) {
+        $value = $payload[$key] ?? null;
+        if (!is_numeric($value)) continue;
+        $value = (int) $value;
+        if ($isCurrentScale && $value >= 0 && $value <= 100) {
+            $answers[$key] = $value;
+        } elseif (!$isCurrentScale && $value >= 1 && $value <= 5) {
+            $answers[$key] = ($value - 1) * 25;
+        }
+    }
+    return $answers;
 }
 
 /**
- * Full comparison. Returns:
- *  score (int|null), shared (answers compared), sections [label => fit %],
- *  same (a question you answered alike), discuss (biggest difference)
+ * Each shared answer has equal weight: fit = 100 - the absolute distance
+ * between two 0..100 slider values. Skips are excluded from both numerator
+ * and denominator, and fewer than five shared answers yields no score.
  */
 function compatibility_result(array $a, array $b): array
 {
-    $A = test_answers($a); $B = test_answers($b);
-    $sum = $weights = 0; $shared = 0; $sections = []; $same = $diff = null;
-    if (($age = age_fit($a, $b)) !== null) {
-        $sum += $age * AGE_WEIGHT; $weights += AGE_WEIGHT; $shared++;
-        $sections['Age'] = [$age];
+    $answersA = test_answers($a);
+    $answersB = test_answers($b);
+    $sum = 0;
+    $shared = 0;
+    $sections = [];
+    $same = $largestDifference = null;
+
+    foreach (test_questions() as $key => $question) {
+        if (!isset($answersA[$key], $answersB[$key])) continue;
+        $gap = abs($answersA[$key] - $answersB[$key]);
+        $fit = 100 - $gap;
+        $sum += $fit;
+        $shared++;
+        $sections[$question['section']][] = $fit;
+        if ($gap <= 5 && !$same) $same = 'You both chose similar answers for: ' . lcfirst($question[0]);
+        if ($gap >= 25 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
     }
-    foreach (test_questions() as $k => $q) {
-        if (!$q[4] || !isset($A[$k], $B[$k])) continue;           // not scored, or skipped by either
-        $gap = abs($A[$k] - $B[$k]);
-        $fit = 100 - 25 * $gap;
-        $sum += $fit * $q[4]; $weights += $q[4]; $shared++;
-        $sections[$q['section']][] = $fit;
-        if ($gap === 0 && !$same) $same = $q[3] ? 'You both said "' . $q[3][$A[$k] - 1] . '" for: ' . lcfirst($q[0]) : 'You answered alike on: ' . lcfirst($q[0]);
-        if ($gap >= 2 && (!$diff || $gap > $diff[1])) $diff = [$q[0], $gap];
-    }
+
     return [
-        'score'    => ($shared >= MIN_SHARED && $weights) ? (int) round($sum / $weights) : null,
-        'shared'   => $shared,
-        'sections' => array_map(fn($f) => array_sum($f) / count($f), $sections),
-        'same'     => $same,
-        'discuss'  => $diff ? 'Worth a chat: ' . lcfirst($diff[0]) : null,
+        'score' => $shared >= MIN_SHARED ? (int) round($sum / $shared) : null,
+        'shared' => $shared,
+        'sections' => array_map(fn($fits) => array_sum($fits) / count($fits), $sections),
+        'same' => $same,
+        'discuss' => $largestDifference ? 'Worth a chat: ' . lcfirst($largestDifference[0]) : null,
     ];
 }
 
@@ -122,8 +126,13 @@ function compatibility_breakdown(array $a, array $b): array
 }
 
 /** Every section scores out of 100 in the breakdown table */
-const COMPATIBILITY_MAX = ['Age' => 100, 'Sleep and daily rhythm' => 100, 'Cleanliness' => 100,
-    'Guests and shared space' => 100, 'Food at home' => 100, 'Comfort and boundaries' => 100];
+const COMPATIBILITY_MAX = [
+    'Sleep and daily rhythm' => 100,
+    'Cleanliness and chores' => 100,
+    'Guests and shared space' => 100,
+    'Food and household practices' => 100,
+    'Comfort and boundaries' => 100,
+];
 
 /** CSS class for colouring a score */
 function score_class(?int $score): string

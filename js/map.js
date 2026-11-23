@@ -103,3 +103,4 @@ const RMMap = (function () {
 
     return { create, search, reverse, INDORE };
 })();
+window.RMMap = RMMap;

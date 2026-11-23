@@ -91,7 +91,7 @@ require __DIR__ . '/../includes/header.php';
             <div class="detail"><span>Budget</span><?= e(rupees((int) $person['budget_min'])) ?> – <?= e(rupees((int) $person['budget_max'])) ?> / month</div>
             <?php if (!empty($person['college'])): ?><div class="detail"><span>College</span><?= e($person['college']) ?><?= $person['college_status'] === 'incoming' ? ' · incoming' : ($person['college_status'] === 'current' ? ' · current student' : '') ?></div><?php endif; ?>
             <?php $ans = test_answers($person); ?>
-            <div class="detail"><span>Test</span><?= count($ans) ?> of <?= count(test_questions()) ?> answered<?= $person['age_min'] ? ' · okay with ages ' . (int) $person['age_min'] . '–' . (int) $person['age_max'] : '' ?></div>
+            <div class="detail"><span>Test</span><?= count($ans) ?> of <?= count(test_questions()) ?> answered</div>
         </div>
 
         <?php if (!empty($person['flat_stage'])): [$fIcon, $fLabel] = FLAT_STAGES[(int) $person['flat_stage']] ?? ['', '']; ?>

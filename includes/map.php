@@ -25,7 +25,7 @@ function map_assets(): string
     $key = maptiler_key();
     $html = $key
         ? '<link rel="stylesheet" href="https://cdn.maptiler.com/maptiler-sdk-js/v2.5.0/maptiler-sdk.css"><script src="https://cdn.maptiler.com/maptiler-sdk-js/v2.5.0/maptiler-sdk.umd.min.js"></script>'
-        : '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>';
+        : '<link rel="stylesheet" href="' . e(url('css/vendor/leaflet/leaflet.css')) . '"><script src="' . e(url('js/vendor/leaflet/leaflet.js')) . '"></script>';
     return $html . '<script>window.RM_MAP = ' . json_encode(['key' => $key]) . ';</script><script src="' . e(url('js/map.js')) . '?v=1"></script>';
 }
 
