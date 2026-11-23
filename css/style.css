@@ -250,7 +250,7 @@ textarea { min-height: 110px; resize: vertical; }
 .auth-form { padding: 28px 22px; }
 .auth-form h1 { margin-bottom: 4px; }
 .auth-form .switch { margin-top: 18px; text-align: center; color: var(--muted); }
-.captcha-box { min-height: 78px; }
+.captcha-box { min-height: 65px; }
 .demo-hint { margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--bg); font-size: .85rem; color: var(--muted); border: 1px dashed var(--border); }
 .password-wrap { position: relative; }
 .password-wrap input { padding-right: 70px; }

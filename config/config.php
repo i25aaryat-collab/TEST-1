@@ -3,7 +3,7 @@
  * config/config.php  —  Owner: M1 (Lead)
  * --------------------------------------------------------------------------
  * The ONE place for settings that change between your laptop (XAMPP) and
- * the online host: database login, reCAPTCHA keys and the site's base URL.
+ * the online host: database login, Turnstile keys and the site's base URL.
  *
  * SECURITY: this file holds secrets. Never paste your real keys or the
  * online database password into an AI chat, WhatsApp group or GitHub.
@@ -26,12 +26,21 @@ define('DB_PASS',   getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
 // login sessions and uploaded photos in the database instead of on disk.
 define('STORE_IN_DB', getenv('STORE_IN_DB') === '1');
 
-// ---------- 2. Google reCAPTCHA v3 ----------------------------------------
-define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Les-y4uAAAAAFLZqlirFo4r5xR88C92bHzypbVw');
-define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '');
+// ---------- 2. Cloudflare Turnstile (human check on login + sign-up) -------
+// Real keys live only in Vercel env vars. Until both are set, Cloudflare's public
+// TEST keys are used: the widget shows and always passes, so login never breaks.
+if (getenv('TURNSTILE_SITE_KEY') && getenv('TURNSTILE_SECRET_KEY')) {
+    define('TURNSTILE_SITE_KEY',   getenv('TURNSTILE_SITE_KEY'));
+    define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY'));
+    define('TURNSTILE_TEST_KEYS',  false);
+} else {
+    define('TURNSTILE_SITE_KEY',   '1x00000000000000000000AA');
+    define('TURNSTILE_SECRET_KEY', '1x0000000000000000000000000000000AA');
+    define('TURNSTILE_TEST_KEYS',  true);
+}
 
 // Emergency switch: set to false ONLY if the laptop has no internet during
-// the demo (Google's CAPTCHA cannot load offline). Keep it true otherwise.
+// the demo (Cloudflare's check cannot load offline). Keep it true otherwise.
 define('CAPTCHA_ENABLED', true);
 
 // ---------- 3. Login lockout ------------------------------------------------

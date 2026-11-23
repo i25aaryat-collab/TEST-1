@@ -7,7 +7,7 @@
  *
  * Before including it, a page may set:
  *   $pageTitle  text for the browser tab
- *   $extraHead  extra tags for <head> (e.g. the reCAPTCHA script)
+ *   $extraHead  extra tags for <head> (e.g. the Turnstile script)
  *   $bodyClass  a CSS class for <body> (e.g. "page-auth")
  * ========================================================================== */
 

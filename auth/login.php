@@ -2,11 +2,11 @@
 /* ==========================================================================
  * auth/login.php  —  Owner: M2 (Authentication)
  * --------------------------------------------------------------------------
- * Log in with email + password + reCAPTCHA.
+ * Log in with email + password + Cloudflare Turnstile.
  * Server-side steps, in order:
  *   1. CSRF check (form came from our page)
  *   2. Fields filled in and email looks valid
- *   3. CAPTCHA verified with Google
+ *   3. human check verified with Cloudflare
  *   4. Not locked out (5 wrong passwords in 10 minutes locks the email)
  *   5. password_verify() against the stored hash
  * On success the session id is replaced (session_regenerate_id) so an old,
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ---- Step 3: CAPTCHA ----
-    if (!$errors && !verify_captcha($_POST['g-recaptcha-response'] ?? null, 'login')) {
+    if (!$errors && !verify_captcha($_POST['cf-turnstile-response'] ?? null, 'login')) {
         $errors['captcha'] = 'Verification failed. Please try again.';
     }
 

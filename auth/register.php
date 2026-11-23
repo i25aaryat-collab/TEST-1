@@ -2,7 +2,7 @@
 /* ==========================================================================
  * auth/register.php  —  Owner: M2 (Authentication)
  * --------------------------------------------------------------------------
- * Create an account: name, email, password, confirm password, reCAPTCHA.
+ * Create an account: name, email, password, confirm password, Cloudflare Turnstile.
  * Rules (checked in JavaScript AND again here in PHP):
  *   - name: 2 to 100 characters, letters, spaces, dots, hyphens, apostrophes
  *   - email: valid format, max 150 characters, not already registered
@@ -58,8 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['confirm_password'] = 'The two passwords do not match.';
     }
 
-    // ---- CAPTCHA (only asked of Google once everything else is fine) ----
-    if (!$errors && !verify_captcha($_POST['g-recaptcha-response'] ?? null, 'register')) {
+    // ---- CAPTCHA (only asked of Cloudflare once everything else is fine) ----
+    if (!$errors && !verify_captcha($_POST['cf-turnstile-response'] ?? null, 'register')) {
         $errors['captcha'] = 'Verification failed. Please try again.';
     }
 
