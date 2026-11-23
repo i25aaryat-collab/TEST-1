@@ -1110,3 +1110,8 @@ body { transition: background-color .35s, color .35s; }
 .no-photo .avatar { position: static; width: 84px; height: 84px; border-radius: 50%; object-fit: cover; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .listing-hero .no-photo .avatar { width: 120px; height: 120px; }
 .listing-hero:has(.no-photo) { position: relative; min-height: 240px; }
+
+
+/* Dark mode: keep sent-message text and timestamps legible on the coral bubble. */
+[data-theme="dark"] .bubble-row.mine .bubble { background: #C83E49; border-color: #C83E49; color: #FFFFFF; }
+[data-theme="dark"] .bubble-row.mine .bubble-time { color: rgba(255,255,255,.82); }
