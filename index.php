@@ -24,11 +24,11 @@ if (isset($_GET['deleted'])) {
 $stats = $pdo->query("
     SELECT (SELECT COUNT(*) FROM users WHERE role = 'user') AS members,
            (SELECT COUNT(*) FROM matches)                    AS matches,
-           (SELECT COUNT(*) FROM listings WHERE status = 'open') AS flats
+           (SELECT COUNT(*) FROM listings WHERE status = 'open' AND user_id NOT IN (SELECT id FROM users WHERE email = 'listings@roomiematch.test')) AS flats
 ")->fetch();
 
 // Two real rooms for the "Flats" feature
-$rooms = $pdo->query("SELECT id, title, area, city, rent, room_type FROM listings WHERE status = 'open' ORDER BY created_at DESC LIMIT 2")->fetchAll();
+$rooms = $pdo->query("SELECT id, title, area, city, rent, room_type FROM listings WHERE status = 'open' AND user_id NOT IN (SELECT id FROM users WHERE email = 'listings@roomiematch.test') ORDER BY created_at DESC LIMIT 2")->fetchAll();
 
 // Main button depends on who is visiting
 if (!is_logged_in())    { $ctaUrl = url('auth/register.php');   $ctaText = 'Take the compatibility test'; }

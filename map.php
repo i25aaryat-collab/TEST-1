@@ -22,7 +22,7 @@ const MAP_DIRECTORY_EMAIL = 'listings@roomiematch.test';
 $points = [];
 $rows = $pdo->query("SELECT l.id, l.title, l.area, l.city, l.rent, l.lat, l.lng, l.user_id, u.name, u.email, p.photo AS avatar, p.answers, p.age, p.age_min, p.age_max
                      FROM listings l JOIN users u ON u.id = l.user_id LEFT JOIN profiles p ON p.user_id = u.id
-                     WHERE l.status = 'open' AND l.lat IS NOT NULL")->fetchAll();
+                     WHERE l.status = 'open' AND l.lat IS NOT NULL AND u.email <> 'listings@roomiematch.test'")->fetchAll();   // only flats with a person behind them
 foreach ($rows as $r) {
     [$la, $ln] = approx_point((float) $r['lat'], (float) $r['lng']);
     $dir = $r['email'] === MAP_DIRECTORY_EMAIL;

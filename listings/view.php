@@ -15,7 +15,7 @@ require_once __DIR__ . '/../swipe/compatibility.php';
 
 $stmt = $pdo->prepare("SELECT l.*, u.name AS owner, p.photo AS owner_photo, p.age AS owner_age
                        FROM listings l JOIN users u ON u.id = l.user_id LEFT JOIN profiles p ON p.user_id = u.id
-                       WHERE l.id = ?");
+                       WHERE l.id = ? AND u.email <> 'listings@roomiematch.test'");   // directory flats (no person) are not shown
 $stmt->execute([(int) ($_GET['id'] ?? 0)]);
 $l = $stmt->fetch();
 $isOwner = $l && is_logged_in() && (int) $l['user_id'] === (int) $_SESSION['user_id'];

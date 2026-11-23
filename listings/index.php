@@ -13,7 +13,7 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/listing_helpers.php';
 require_once __DIR__ . '/../swipe/compatibility.php';
 
-$cities = $pdo->query("SELECT DISTINCT city FROM listings WHERE status = 'open' ORDER BY city")->fetchAll(PDO::FETCH_COLUMN);
+$cities = $pdo->query("SELECT DISTINCT city FROM listings WHERE status = 'open' AND user_id NOT IN (SELECT id FROM users WHERE email = 'listings@roomiematch.test') ORDER BY city")->fetchAll(PDO::FETCH_COLUMN);
 $q        = trim($_GET['q'] ?? '');
 $city     = in_array($_GET['city'] ?? '', $cities, true) ? $_GET['city'] : '';
 $maxRent  = isset($_GET['max_rent']) && ctype_digit($_GET['max_rent']) ? (int) $_GET['max_rent'] : null;
@@ -24,7 +24,8 @@ $sort  = array_key_exists($_GET['sort'] ?? '', $sorts) ? $_GET['sort'] : 'new';
 
 // Each flat is shown through the PERSON who posted it: their name, picture and your score with them.
 $sql = "SELECT l.*, u.name AS owner, u.email AS owner_email, p.photo AS owner_photo, p.answers, p.age, p.age_min, p.age_max
-        FROM listings l JOIN users u ON u.id = l.user_id LEFT JOIN profiles p ON p.user_id = u.id WHERE l.status = 'open'";
+        FROM listings l JOIN users u ON u.id = l.user_id LEFT JOIN profiles p ON p.user_id = u.id
+        WHERE l.status = 'open' AND u.email <> 'listings@roomiematch.test'";   // every flat belongs to a person; imported directory flats are hidden
 $params = [];
 if ($q !== '')          { $sql .= ' AND (LOWER(l.title) LIKE LOWER(?) OR LOWER(l.area) LIKE LOWER(?))'; $params[] = "%$q%"; $params[] = "%$q%"; }
 if ($city !== '')       { $sql .= ' AND l.city = ?'; $params[] = $city; }
