@@ -35,6 +35,8 @@
     --shadow-lg: 0 18px 48px rgba(43, 45, 66, 0.16);
     --bounce: cubic-bezier(.34, 1.56, .64, 1);
     --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --chat-surface: #F4F5F8;
+    --chat-received: #FFFFFF;
     --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -363,12 +365,12 @@ textarea { min-height: 110px; resize: vertical; }
 .chat-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .chat-head .who { flex: 1; min-width: 0; }
 .chat-head .who strong { display: block; }
-.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #FBFBFC; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: var(--chat-surface); }
 .bubble-row { display: flex; align-items: flex-end; gap: 6px; max-width: 82%; }
 .bubble-row.mine { align-self: flex-end; flex-direction: row-reverse; }
 .bubble { padding: 9px 14px; border-radius: 18px; background: var(--white); border: 1px solid var(--border); word-wrap: break-word; overflow-wrap: anywhere; white-space: pre-wrap; }
 .bubble-row.mine .bubble { background: var(--coral); color: var(--white); border-color: var(--coral); border-bottom-right-radius: 6px; }
-.bubble-row:not(.mine) .bubble { border-bottom-left-radius: 6px; }
+.bubble-row:not(.mine) .bubble { background: var(--chat-received); color: var(--navy); border-bottom-left-radius: 6px; }
 .bubble-time { display: block; font-size: .7rem; opacity: .7; margin-top: 2px; }
 .msg-delete { opacity: 0; background: none; border: 0; color: var(--muted); cursor: pointer; font-size: .78rem; padding: 4px; border-radius: 6px; }
 .bubble-row:hover .msg-delete, .msg-delete:focus { opacity: 1; }
@@ -784,7 +786,7 @@ input, textarea { cursor: text; }
    ========================================================================== */
 [data-theme="dark"] {
     --bg: #111218; --white: #1B1C24; --field: #242632; --navy: #ECEDF4; --navy-soft: #C3C5D3;
-    --muted: #9C9FB3; --border: #2D2F3C; --coral-soft: #3A1F24; --green-soft: #17322A; --red-soft: #3B1D22;
+    --muted: #9C9FB3; --border: #2D2F3C; --coral-soft: #3A1F24; --green-soft: #17322A; --red-soft: #3B1D22; --chat-surface: #15161E; --chat-received: #242632;
     --shadow: 0 6px 24px rgba(0,0,0,.35); --shadow-lg: 0 18px 48px rgba(0,0,0,.5);
     color-scheme: dark;
 }
