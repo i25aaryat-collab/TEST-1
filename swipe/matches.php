@@ -144,7 +144,7 @@ require __DIR__ . '/../includes/header.php';
 
 <?php
 $actionUrl = json_encode(url('swipe/swipe_action.php'));
-$chatUrl   = json_encode(url('chat/conversation.php?match_id='));
+$chatUrl   = json_encode(url('chat/connect.php?match_id='));  // right after matching: choose what to share, then chat
 $extraScripts = <<<HTML
 <script>
 /* Accept = send a request back (instant match). Decline = a 'pass'. */

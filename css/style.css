@@ -803,7 +803,15 @@ input, textarea { cursor: text; }
 .theme-toggle:hover { transform: rotate(-25deg) scale(1.08); }
 
 /* ---------- 19. Connection page, quiz, pact, shortlists ---------- */
-.connection-panel { display: grid; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.connection-panel { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 18px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.connection-panel .panel-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-left: auto; }
+.chat-head, .chat-form, .picker, .typing-line, .quick-replies { flex: none; }
+.chat-messages { min-height: 220px; }
+.connect-step { text-align: center; padding: 28px clamp(18px, 4vw, 36px); }
+.connect-step .avatar { width: 72px; height: 72px; margin: 0 auto 12px; }
+.connect-step h1 { font-size: clamp(1.3rem, 3vw, 1.6rem); margin: 0 0 6px; }
+.connect-step .share-form { text-align: left; margin-top: 18px; }
+.connect-step .btn-row { margin-top: 18px; justify-content: center; }
 .connect-celebrate { padding: 14px 16px; border-radius: var(--radius-sm); background: linear-gradient(120deg, var(--coral-soft), var(--green-soft)); animation: pop-in .6s var(--bounce) both; }
 @keyframes pop-in { from { transform: scale(.92); opacity: 0; } }
 .panel-block summary { cursor: pointer; font-weight: 700; }

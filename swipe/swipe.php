@@ -279,14 +279,14 @@ require __DIR__ . '/../includes/header.php';
         </div>
         <div class="btn-row">
             <button type="button" class="btn" id="keep-going">Keep looking</button>
-            <a class="btn btn-primary" id="match-chat" href="#">Send a message</a>
+            <a class="btn btn-primary" id="match-chat" href="#">Continue</a>
         </div>
     </div>
 </div>
 
 <?php
 $actionUrl = json_encode(url('swipe/swipe_action.php'));
-$chatUrl   = json_encode(url('chat/conversation.php?match_id='));
+$chatUrl   = json_encode(url('chat/connect.php?match_id='));  // right after matching: choose what to share, then chat
 $extraScripts = <<<HTML
 <script>
 /* ---------- Requests (M4): sent in the background with fetch() ---------- */
