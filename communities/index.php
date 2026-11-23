@@ -48,7 +48,8 @@ require __DIR__ . '/../includes/header.php';
     <div class="page-head"><div><h1><?= e($view['name']) ?></h1><?php if (!empty($view['topic'])): ?><span class="topic-tag"><?= e(community_topic_label($view['topic'])) ?></span><?php endif; ?>
             <?php if (!empty($view['about'])): ?><p><?= e($view['about']) ?></p><?php endif; ?>
             <p class="muted"><?= count($members) + 1 ?> members · ranked by your score · only members see this list</p></div>
-        <a class="btn" href="<?= e(url('communities/index.php')) ?>">All communities</a></div>
+        <div class="btn-row"><a class="btn btn-primary" href="<?= e(url('communities/chat.php?id=' . (int) $view['id'])) ?>">Open group chat</a>
+            <a class="btn" href="<?= e(url('communities/index.php')) ?>">All communities</a></div></div>
     <div class="card share-link">
         <label for="clink" class="small"><strong>Invite link</strong>: anyone with it can join</label>
         <div class="inline-form"><input id="clink" readonly value="<?= e(community_link($view)) ?>" onclick="this.select()">
