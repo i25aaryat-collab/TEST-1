@@ -91,6 +91,7 @@ function compatibility_result(array $a, array $b): array
     $sum = 0;
     $shared = 0;
     $sections = [];
+    $items = [];                                   // every shared question, for the "how is this worked out" panel
     $same = $largestDifference = null;
 
     foreach (test_questions() as $key => $question) {
@@ -100,6 +101,7 @@ function compatibility_result(array $a, array $b): array
         $sum += $fit;
         $shared++;
         $sections[$question['section']][] = $fit;
+        $items[] = ['q' => $question[0], 'you' => $answersA[$key], 'them' => $answersB[$key], 'fit' => $fit];
         if ($gap <= 5 && !$same) $same = 'You both chose similar answers for: ' . lcfirst($question[0]);
         if ($gap >= 25 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
     }
@@ -107,6 +109,8 @@ function compatibility_result(array $a, array $b): array
     return [
         'score' => $shared >= MIN_SHARED ? (int) round($sum / $shared) : null,
         'shared' => $shared,
+        'sum' => $sum,
+        'items' => $items,
         'sections' => array_map(fn($fits) => array_sum($fits) / count($fits), $sections),
         'same' => $same,
         'discuss' => $largestDifference ? 'Worth a chat: ' . lcfirst($largestDifference[0]) : null,
@@ -151,10 +155,33 @@ function score_ring(?int $score): string
          . '<span>' . ($score === null ? '–' : $score . '<small>%</small>') . '</span></div>';
 }
 
-/** "82% · based on 12 shared answers ⓘ" (or "Not enough answers yet ⓘ"), linking to How matching works */
+/** "82% · based on 12 shared answers" + an (i) that opens how this exact score was worked out */
 function score_line(array $r): string
 {
-    $info = '<a class="info-i" href="' . e(url('how-matching-works.php')) . '" title="How matching works" aria-label="How matching works">ⓘ</a>';
-    if ($r['score'] === null) return '<p class="score-line muted small">Not enough answers yet (' . (int) $r['shared'] . ' shared) ' . $info . '</p>';
-    return '<p class="score-line small"><strong>' . $r['score'] . '%</strong> · based on ' . $r['shared'] . ' shared answer' . ($r['shared'] === 1 ? '' : 's') . ' ' . $info . '</p>';
+    if ($r['score'] === null) return '<div class="score-line muted small">Not enough answers yet (' . (int) $r['shared'] . ' shared) ' . score_explain($r) . '</div>';
+    return '<div class="score-line small"><strong>' . $r['score'] . '%</strong> · based on ' . $r['shared'] . ' shared answer' . ($r['shared'] === 1 ? '' : 's') . ' ' . score_explain($r) . '</div>';
+}
+
+/**
+ * The (i) button: opens a small panel showing the formula and this pair's own numbers.
+ *   score = average over shared questions of (100 - |your answer - their answer|)
+ */
+function score_explain(array $r): string
+{
+    $rows = '';
+    foreach ($r['items'] ?? [] as $i) {
+        $rows .= '<tr><td>' . e($i['q']) . '</td><td>' . (int) $i['you'] . '</td><td>' . (int) $i['them'] . '</td><td>100 − ' . abs((int) $i['you'] - (int) $i['them']) . ' = <strong>' . (int) $i['fit'] . '</strong></td></tr>';
+    }
+    $n = (int) $r['shared'];
+    $result = $r['score'] === null
+        ? '<p class="why-result">Only ' . $n . ' shared answer' . ($n === 1 ? '' : 's') . '. A score needs at least ' . MIN_SHARED . ', so none is shown yet.</p>'
+        : '<p class="why-result">' . (count($r['items'] ?? []) <= 12 ? implode(' + ', array_map(fn($i) => (int) $i['fit'], $r['items'] ?? [])) . ' = ' : 'Fits add up to ')
+          . (int) ($r['sum'] ?? 0) . ', ÷ ' . $n . ' answers = <strong>' . $r['score'] . '%</strong></p>';
+    return '<details class="score-why"><summary aria-label="How this score is worked out" title="How this score is worked out">i</summary><div class="why-panel">'
+        . '<p class="why-formula"><strong>Score</strong> = average of <code>100 − |your answer − their answer|</code> over the questions you both answered</p>'
+        . '<p class="muted small">Each answer is a 0–100 slider. Identical answers give 100, opposite ends give 0. Skipped questions don\'t count. At least ' . MIN_SHARED . ' shared answers are needed.</p>'
+        . ($rows ? '<div class="why-table"><table><thead><tr><th>Question</th><th>You</th><th>Them</th><th>Fit</th></tr></thead><tbody>' . $rows . '</tbody></table></div>' : '')
+        . $result
+        . '<div class="why-foot"><a class="small" href="' . e(url('how-matching-works.php')) . '">More about matching</a>'
+        . '<button type="button" class="btn btn-sm" onclick="this.closest(\'details\').open=false">Close</button></div></div></details>';
 }

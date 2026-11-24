@@ -49,7 +49,8 @@ foreach ($requests as &$r) {
 unset($r);
 
 foreach ($matches as &$m) {
-    $m['score'] = compatibility_score($me, $m);
+    $m['result'] = compatibility_result($me, $m);
+    $m['score'] = $m['result']['score'];
 }
 unset($m);
 
@@ -130,7 +131,7 @@ require __DIR__ . '/../includes/header.php';
                             <h3><?= e($m['name']) ?>, <?= (int) $m['age'] ?></h3>
                             <div class="muted small"><?= e($m['city']) ?> · matched <?= e(nice_date($m['matched_at'])) ?></div>
                         </div>
-                        <div><span class="score <?= score_class($m['score']) ?>"><?= $m['score'] === null ? 'Not enough answers yet' : $m['score'] . '% compatible' ?></span> <a class="info-i" href="<?= e(url('how-matching-works.php')) ?>" title="How matching works">ⓘ</a></div>
+                        <div><span class="score <?= score_class($m['score']) ?>"><?= $m['score'] === null ? 'Not enough answers yet' : $m['score'] . '% compatible' ?></span> <?= score_explain($m['result']) ?></div>
                         <div class="btn-row">
                             <a class="btn btn-primary btn-sm" href="<?= e(url('chat/conversation.php?match_id=' . (int) $m['match_id'])) ?>">Chat</a>
                             <a class="btn btn-sm" href="<?= e(url('profile/view_profile.php?id=' . (int) $m['uid'])) ?>">View profile</a>
