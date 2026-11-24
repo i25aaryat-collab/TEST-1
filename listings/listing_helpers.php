@@ -103,25 +103,15 @@ function pending_location_requests(PDO $pdo, int $listingId): array
     });
 }
 
-/** Google Street View: an embed when GOOGLE_MAPS_EMBED_KEY is set, and always a link that opens it */
+/** Street view from Mapillary: the nearest street photo in a viewer (needs MAPILLARY_TOKEN), and a link that opens it */
 function street_view(float $lat, float $lng): string
 {
-    // Street-level photos come from Mapillary (free, no billing; env MAPILLARY_TOKEN = its client token).
-    // Google's embed still works too if GOOGLE_MAPS_EMBED_KEY is ever set.
-    $gKey = getenv('GOOGLE_MAPS_EMBED_KEY') ?: '';
+    // Street-level photos come from Mapillary (free; env MAPILLARY_TOKEN = its client token).
     $mKey = getenv('MAPILLARY_TOKEN') ?: '';
-    $view = '';
-    if ($mKey) {
-        $view = '<div class="street-view" id="mly-view" data-lat="' . $lat . '" data-lng="' . $lng . '" data-token="' . e($mKey) . '">'
-              . '<p class="muted small sv-msg">Loading street view…</p></div>';
-    } elseif ($gKey) {
-        $view = '<iframe class="street-view" title="Street View of the flat" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="'
-              . e('https://www.google.com/maps/embed/v1/streetview?key=' . rawurlencode($gKey) . '&location=' . $lat . ',' . $lng . '&fov=80') . '"></iframe>';
-    }
-    $google = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' . $lat . ',' . $lng;
+    $view = $mKey ? '<div class="street-view" id="mly-view" data-lat="' . $lat . '" data-lng="' . $lng . '" data-token="' . e($mKey) . '">'
+                  . '<p class="muted small sv-msg">Loading street view…</p></div>' : '';
     $mly = 'https://www.mapillary.com/app/?lat=' . $lat . '&lng=' . $lng . '&z=17';
     return '<div class="street-view-box"><h3 class="h-small">Street view</h3>' . $view
-        . '<div class="btn-row"><a class="btn btn-sm" href="' . e($google) . '" target="_blank" rel="noopener">Open in Google Street View</a>'
-        . '<a class="btn btn-ghost btn-sm" href="' . e($mly) . '" target="_blank" rel="noopener">Open in Mapillary</a></div>'
+        . '<a class="btn btn-ghost btn-sm" id="mly-link" href="' . e($mly) . '" target="_blank" rel="noopener">Open in Mapillary</a>'
         . '<span class="muted small">Street-level photos may not be available on every lane.</span></div>';
 }

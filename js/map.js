@@ -222,12 +222,15 @@ window.RMMap = RMMap;
             var dd = Math.pow(c[0] - lng, 2) + Math.pow(c[1] - lat, 2);
             if (dd < bestD) { bestD = dd; best = im.id; }
         });
-        if (!best) return msg('No street-level photos near this flat yet. Try the links below.');
+        if (!best) return msg('No street-level photos near this flat yet. Try the link below.');
+        // Point "Open in Mapillary" at this exact photo, full screen, instead of the general map
+        var link = document.getElementById('mly-link');
+        if (link) link.href = 'https://www.mapillary.com/app/?pKey=' + encodeURIComponent(best) + '&focus=photo';
         var css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css';
         document.head.appendChild(css);
         var s = document.createElement('script'); s.src = 'https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js';
         s.onload = function () { box.innerHTML = ''; new mapillary.Viewer({ accessToken: token, container: box, imageId: best }); };
-        s.onerror = function () { msg('Street view could not load. Try the links below.'); };
+        s.onerror = function () { msg('Street view could not load. Try the link below.'); };
         document.head.appendChild(s);
-    }).catch(function () { msg('Street view could not load. Try the links below.'); });
+    }).catch(function () { msg('Street view could not load. Try the link below.'); });
 })();

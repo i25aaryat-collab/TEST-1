@@ -77,7 +77,7 @@ require __DIR__ . '/../includes/header.php';
                         <form method="post" action="<?= e(url('listings/location_request.php')) ?>"><?= csrf_field() ?>
                             <input type="hidden" name="action" value="request"><input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
                             <button class="btn btn-sm">Request exact location</button>
-                            <span class="muted small"><?= e(explode(' ', $l['owner'])[0]) ?> decides whether to share it. You'll also see Street View once they do.</span>
+                            <span class="muted small"><?= e(explode(' ', $l['owner'])[0]) ?> decides whether to share it. You'll also see street photos of the spot once they do.</span>
                         </form>
                     <?php elseif ($myLocReq['status'] === 'pending'): ?>
                         <span class="pill-note">Exact location requested · waiting for <?= e(explode(' ', $l['owner'])[0]) ?></span>

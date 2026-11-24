@@ -110,7 +110,7 @@ require __DIR__ . '/../includes/header.php';
     <?php if ($locAsks): ?>
         <section class="card requests" aria-labelledby="loc-title">
             <h2 id="loc-title">Asking for your flat's exact location <span class="count-pill"><?= count($locAsks) ?></span></h2>
-            <p class="muted small">They only see the approximate area until you share. Sharing also shows them Street View.</p>
+            <p class="muted small">They only see the approximate area until you share. Sharing also shows them street photos of the spot.</p>
             <ul class="request-list">
                 <?php foreach ($locAsks as $q): $qs = $q['answers'] !== null ? compatibility_score($me, $q) : null; ?>
                     <li class="request-item">
