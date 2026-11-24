@@ -4,8 +4,8 @@
  * --------------------------------------------------------------------------
  * The compatibility score, from the RoomieMatch test (profile/test.php).
  *
- *  - The twenty questions use 0..100 sliders stored in profiles.answers JSON.
- *  - Fit per question = 100 - the distance between two answers.
+ *  - Every question is a 1..5 scale, stored in profiles.answers JSON.
+ *  - Fit per question = 100 - 25 x (steps apart): same 100, 1 apart 75, 2 apart 50, 3 apart 25, opposite ends 0.
  *  - Every question has equal weight. A skipped answer is excluded.
  *  - Fewer than MIN_SHARED shared answers -> no score ("Not enough answers yet").
  *  - Budget and city are Discover filters, not part of the score.
@@ -57,31 +57,27 @@ function test_questions(): array
     return $all;
 }
 
-/** Stored answers are normalized to 0..100. Older 1..5 scores are expanded to that scale. */
+/** Answers as 1..5 steps. (Answers saved during the short-lived 0..100 slider version are rounded to the nearest step.) */
 function test_answers(array $profile): array
 {
     $payload = json_decode((string) ($profile['answers'] ?? ''), true);
     if (!is_array($payload)) return [];
-    $isCurrentScale = (int) ($payload['_scale'] ?? 0) === 100;
+    $fromHundred = (int) ($payload['_scale'] ?? 0) === 100;
     unset($payload['_scale']);
 
     $answers = [];
     foreach (test_questions() as $key => $_question) {
         $value = $payload[$key] ?? null;
         if (!is_numeric($value)) continue;
-        $value = (int) $value;
-        if ($isCurrentScale && $value >= 0 && $value <= 100) {
-            $answers[$key] = $value;
-        } elseif (!$isCurrentScale && $value >= 1 && $value <= 5) {
-            $answers[$key] = ($value - 1) * 25;
-        }
+        $value = $fromHundred ? (int) round(max(0, min(100, (float) $value)) / 25) + 1 : (int) $value;
+        if ($value >= 1 && $value <= 5) $answers[$key] = $value;
     }
     return $answers;
 }
 
 /**
- * Each shared answer has equal weight: fit = 100 - the absolute distance
- * between two 0..100 slider values. Skips are excluded from both numerator
+ * Each shared answer has equal weight: fit = 100 - 25 x the number of steps
+ * between two 1..5 answers. Skips are excluded from both numerator
  * and denominator, and fewer than five shared answers yields no score.
  */
 function compatibility_result(array $a, array $b): array
@@ -96,14 +92,15 @@ function compatibility_result(array $a, array $b): array
 
     foreach (test_questions() as $key => $question) {
         if (!isset($answersA[$key], $answersB[$key])) continue;
-        $gap = abs($answersA[$key] - $answersB[$key]);
+        $steps = abs($answersA[$key] - $answersB[$key]);
+        $gap = $steps * 25;                                      // 0, 25, 50, 75 or 100
         $fit = 100 - $gap;
         $sum += $fit;
         $shared++;
         $sections[$question['section']][] = $fit;
         $items[] = ['q' => $question[0], 'you' => $answersA[$key], 'them' => $answersB[$key], 'fit' => $fit];
-        if ($gap <= 5 && !$same) $same = 'You both chose similar answers for: ' . lcfirst($question[0]);
-        if ($gap >= 25 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
+        if ($steps === 0 && !$same) $same = 'You both chose similar answers for: ' . lcfirst($question[0]);
+        if ($steps >= 2 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
     }
 
     return [
@@ -164,13 +161,13 @@ function score_line(array $r): string
 
 /**
  * The (i) button: opens a small panel showing the formula and this pair's own numbers.
- *   score = average over shared questions of (100 - |your answer - their answer|)
+ *   score = average over shared questions of (100 - 25 x |your answer - their answer|), answers on 1..5
  */
 function score_explain(array $r): string
 {
     $rows = '';
     foreach ($r['items'] ?? [] as $i) {
-        $rows .= '<tr><td>' . e($i['q']) . '</td><td>' . (int) $i['you'] . '</td><td>' . (int) $i['them'] . '</td><td>100 − ' . abs((int) $i['you'] - (int) $i['them']) . ' = <strong>' . (int) $i['fit'] . '</strong></td></tr>';
+        $rows .= '<tr><td>' . e($i['q']) . '</td><td>' . (int) $i['you'] . '</td><td>' . (int) $i['them'] . '</td><td>100 − 25 × ' . abs((int) $i['you'] - (int) $i['them']) . ' = <strong>' . (int) $i['fit'] . '</strong></td></tr>';
     }
     $n = (int) $r['shared'];
     $result = $r['score'] === null
@@ -178,8 +175,8 @@ function score_explain(array $r): string
         : '<p class="why-result">' . (count($r['items'] ?? []) <= 12 ? implode(' + ', array_map(fn($i) => (int) $i['fit'], $r['items'] ?? [])) . ' = ' : 'Fits add up to ')
           . (int) ($r['sum'] ?? 0) . ', ÷ ' . $n . ' answers = <strong>' . $r['score'] . '%</strong></p>';
     return '<details class="score-why"><summary aria-label="How this score is worked out" title="How this score is worked out">i</summary><div class="why-panel">'
-        . '<p class="why-formula"><strong>Score</strong> = average of <code>100 − |your answer − their answer|</code> over the questions you both answered</p>'
-        . '<p class="muted small">Each answer is a 0–100 slider. Identical answers give 100, opposite ends give 0. Skipped questions don\'t count. At least ' . MIN_SHARED . ' shared answers are needed.</p>'
+        . '<p class="why-formula"><strong>Score</strong> = average of <code>100 − 25 × |your answer − their answer|</code> over the questions you both answered</p>'
+        . '<p class="muted small">Every answer is on a 1–5 scale. Same answer = 100, one step apart = 75, two = 50, three = 25, opposite ends = 0. Skipped questions don\'t count. At least ' . MIN_SHARED . ' shared answers are needed.</p>'
         . ($rows ? '<div class="why-table"><table><thead><tr><th>Question</th><th>You</th><th>Them</th><th>Fit</th></tr></thead><tbody>' . $rows . '</tbody></table></div>' : '')
         . $result
         . '<div class="why-foot"><a class="small" href="' . e(url('how-matching-works.php')) . '">More about matching</a>'

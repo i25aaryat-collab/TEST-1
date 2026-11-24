@@ -1218,3 +1218,11 @@ html:not([data-theme="dark"]) .fyp-stage {
 .why-modal .why-table { max-height: none; }
 @keyframes why-in { from { opacity: 0; } }
 .why-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+
+/* 1-5 test scales: five visible stops under each slider */
+.tq-track { flex: 1; display: grid; gap: 4px; }
+.tq-track input[type=range] { width: 100%; }
+.tq-ticks { display: flex; justify-content: space-between; padding: 0 6px; font-size: .72rem; color: var(--muted); font-weight: 600; }
+.tq-ticks i { font-style: normal; width: 1ch; text-align: center; }
+.tq.is-unset .tq-ticks { opacity: .55; }
+@media (max-width: 600px) { .tq-scale .tq-track { grid-column: 1 / -1; grid-row: 2; } }
