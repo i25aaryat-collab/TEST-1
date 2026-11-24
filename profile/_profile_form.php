@@ -227,7 +227,7 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
     <div class="row-3">
         <div class="form-group"><label for="phone">Phone</label><input type="tel" id="phone" name="phone" value="<?= e($values['phone']) ?>" placeholder="98765 43210" class="<?= invalid($errors, 'phone') ?>"><?= error_box($errors, 'phone') ?></div>
         <div class="form-group"><label for="contact_email">Email to share</label><input type="email" id="contact_email" name="contact_email" value="<?= e($values['contact_email']) ?>" class="<?= invalid($errors, 'contact_email') ?>"><?= error_box($errors, 'contact_email') ?></div>
-        <div class="form-group"><label for="instagram">Instagram</label><input id="instagram" name="instagram" value="<?= e($values['instagram']) ?>" placeholder="@yourname" class="<?= invalid($errors, 'instagram') ?>"><?= error_box($errors, 'instagram') ?></div>
+        <div class="form-group"><label for="instagram">Instagram</label><input type="text" id="instagram" name="instagram" value="<?= e($values['instagram']) ?>" placeholder="@yourname" class="<?= invalid($errors, 'instagram') ?>"><?= error_box($errors, 'instagram') ?></div>
     </div>
 
     <div class="form-actions">

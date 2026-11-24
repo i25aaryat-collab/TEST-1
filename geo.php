@@ -6,9 +6,10 @@
  *   - a real User-Agent and Referer that identify RoomieMatch
  *   - at most 1 request per second to Nominatim (shared across all visitors)
  *   - answers cached (table geo_cache, 30 days), so the same search never hits OSM twice
- * If Nominatim is busy or refuses, Photon (Komoot, also OSM data) is asked instead.
+ * Suggestions as you type come from Photon (Komoot, OSM data, made for type-ahead);
+ * Nominatim is the fallback and turns a dropped pin into an address.
  *
- *   GET ?q=text[&lat=..&lng=..]  -> [{name, short, lat, lng}, ...]  (up to 6, India, biased near lat/lng)
+ *   GET ?q=text[&lat=..&lng=..]  -> [{name, short, area, lat, lng}, ...]  (up to 6, India, biased near lat/lng)
  *   GET ?lat=..&lng=..           -> {name}                          (address of a point)
  * Only for logged-in people (the pickers live on the profile and listing forms).
  */
@@ -77,26 +78,41 @@ function geo_db(PDO $pdo, callable $fn)
     }
 }
 
-/** Nominatim first (1 request/second for the whole site), Photon if Nominatim fails */
+/**
+ * Suggestions as you type come from Photon (built for type-ahead, forgives spelling like "vijaynagar").
+ * Nominatim's policy does not allow type-ahead, so it is only the fallback when Photon is down
+ * (paced to 1 request/second for the whole site).
+ */
 function geo_search(string $q, ?array $near): ?string
 {
-    $p = ['format' => 'jsonv2', 'q' => $q, 'countrycodes' => 'in', 'limit' => 6, 'addressdetails' => 1, 'accept-language' => 'en'];
-    if ($near) $p['viewbox'] = ($near[1] - .6) . ',' . ($near[0] + .6) . ',' . ($near[1] + .6) . ',' . ($near[0] - .6);   // prefer, not limit
-    $j = geo_nominatim('search', $p);
-    if (is_array($j)) return json_encode(array_map(fn($x) => [
-        'name' => $x['display_name'], 'short' => geo_short($x), 'lat' => (float) $x['lat'], 'lng' => (float) $x['lon'],
-    ], $j));
-
-    $pp = ['q' => $q, 'limit' => 6, 'lang' => 'en', 'bbox' => '68,6,98,37'];          // India
-    if ($near) { $pp['lat'] = $near[0]; $pp['lon'] = $near[1]; }
+    $pp = ['q' => $q, 'limit' => 7, 'lang' => 'en', 'bbox' => '68,6,98,37'];          // India
+    if ($near) { $pp['lat'] = $near[0]; $pp['lon'] = $near[1]; $pp['location_bias_scale'] = 0.4; }
     $j = geo_get(getenv('GEO_PHOTON_URL') ?: 'https://photon.komoot.io/api/', $pp);
-    if (!is_array($j) || !isset($j['features'])) return null;
-    return json_encode(array_map(function ($f) {
-        $p = $f['properties'];
-        $parts = array_values(array_filter([$p['name'] ?? null, $p['street'] ?? null, $p['district'] ?? null, $p['city'] ?? null, $p['state'] ?? null]));
-        return ['name' => implode(', ', $parts), 'short' => implode(', ', array_slice($parts, 0, 2)),
-                'lat' => (float) $f['geometry']['coordinates'][1], 'lng' => (float) $f['geometry']['coordinates'][0]];
-    }, $j['features']));
+    if (is_array($j) && isset($j['features'])) {
+        $seen = []; $out = [];
+        foreach ($j['features'] as $f) {
+            $p = $f['properties'] ?? [];
+            if (($p['countrycode'] ?? 'IN') !== 'IN') continue;
+            $main = $p['name'] ?? trim(($p['housenumber'] ?? '') . ' ' . ($p['street'] ?? ''));
+            $area = array_values(array_unique(array_filter([$p['street'] ?? null, $p['locality'] ?? null, $p['district'] ?? null, $p['city'] ?? $p['county'] ?? null, $p['state'] ?? null])));
+            $area = array_values(array_filter($area, fn($x) => $x !== $main));
+            $name = implode(', ', array_filter(array_merge([$main], $area)));
+            if ($name === '' || isset($seen[$name])) continue;
+            $seen[$name] = true;
+            $out[] = ['name' => $name, 'short' => $main ?: ($area[0] ?? $name), 'area' => implode(', ', array_slice($area, 0, 3)),
+                      'lat' => (float) $f['geometry']['coordinates'][1], 'lng' => (float) $f['geometry']['coordinates'][0]];
+        }
+        if ($out) return json_encode(array_slice($out, 0, 6));
+    }
+    // Fallback: Nominatim (full search, not type-ahead)
+    $p = ['format' => 'jsonv2', 'q' => $q, 'countrycodes' => 'in', 'limit' => 6, 'addressdetails' => 1, 'accept-language' => 'en'];
+    if ($near) $p['viewbox'] = ($near[1] - .6) . ',' . ($near[0] + .6) . ',' . ($near[1] + .6) . ',' . ($near[0] - .6);
+    $j = geo_nominatim('search', $p);
+    if (!is_array($j)) return null;
+    return json_encode(array_map(fn($x) => [
+        'name' => $x['display_name'], 'short' => geo_short($x, 0), 'area' => implode(', ', array_slice(array_map('trim', explode(',', $x['display_name'])), 1, 3)),
+        'lat' => (float) $x['lat'], 'lng' => (float) $x['lon'],
+    ], $j));
 }
 
 function geo_reverse(float $lat, float $lng): ?string

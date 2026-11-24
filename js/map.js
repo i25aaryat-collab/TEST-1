@@ -150,7 +150,7 @@ const RMMap = (function () {
         function render(msg) {
             if (msg) { list.innerHTML = '<li class="loc-note" role="presentation">' + esc(msg) + '</li>'; show(true); return; }
             list.innerHTML = items.map((x, i) => '<li role="option" id="' + q.id + '-o' + i + '" data-i="' + i + '" aria-selected="' + (i === active) + '">' +
-                '<strong>' + esc(x.short || x.name.split(',')[0]) + '</strong><span>' + esc(x.name) + '</span></li>').join('');
+                '<strong>' + esc(x.short || x.name.split(',')[0]) + '</strong><span>' + esc(x.area || x.name) + '</span></li>').join('');
             q.setAttribute('aria-activedescendant', active >= 0 ? q.id + '-o' + active : '');
             show(items.length > 0);
         }
@@ -178,7 +178,7 @@ const RMMap = (function () {
                 if (found === null) render('Search is unavailable right now. Use "Adjust on map" instead.');
                 else if (!items.length) render('No places found. Try a nearby landmark or area.');
                 else render();
-            }, 450);
+            }, 250);
         });
         q.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && items.length) pick(active >= 0 ? active : 0); return; }   // never submits the form

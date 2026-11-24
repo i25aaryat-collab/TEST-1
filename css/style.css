@@ -197,7 +197,7 @@ p  { margin: 0 0 1em; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 legend { font-weight: 600; font-size: .95rem; padding: 0; margin-bottom: 6px; }
 
-input[type=text], input[type=email], input[type=password], input[type=number], input[type=search], select, textarea {
+input[type=text], input[type=email], input[type=tel], input[type=url], input:not([type]), input[type=password], input[type=number], input[type=search], select, textarea {
     width: 100%; padding: 11px 14px; min-height: 46px;
     font: inherit; color: var(--navy);
     background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
@@ -1165,3 +1165,6 @@ html:not([data-theme="dark"]) .fyp-stage {
 .loc-results li[aria-selected="true"] { background: var(--field); }
 .loc-results .loc-note { cursor: default; color: var(--muted); }
 .loc-panel { margin-top: 10px; }
+/* Suggestions sit above the map (Leaflet panes use z-index up to 1000) */
+.loc-searchbox { z-index: 1100; }
+.loc-searchbox .loc-results { z-index: 1100; }
