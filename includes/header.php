@@ -70,6 +70,7 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
                 <a class="btn btn-primary btn-sm" href="<?= e(url('auth/register.php')) ?>">Sign up free</a>
             <?php elseif (is_admin()): ?>
                 <?= nav_link('admin/dashboard.php', 'Users', $current) ?>
+                <?= nav_link('admin/listings.php', 'Properties', $current) ?>
                 <?= nav_link('admin/reports.php', 'Reports', $current) ?>
                 <span class="nav-user">Hi, <?= e($_SESSION['name']) ?></span>
                 <a class="btn btn-outline btn-sm" href="<?= e(url('auth/logout.php')) ?>">Log out</a>

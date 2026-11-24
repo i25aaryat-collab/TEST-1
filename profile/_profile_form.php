@@ -254,7 +254,7 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
 
     <div class="form-actions">
         <?php if ($mode === 'edit'): ?>
-            <a class="btn" href="<?= e(url('profile/view_profile.php')) ?>">Cancel</a>
+            <a class="btn" href="<?= e(url($cancelUrl ?? 'profile/view_profile.php')) ?>">Cancel</a>
             <button type="submit" class="btn btn-primary">Save changes</button>
         <?php else: ?>
             <button type="submit" class="btn btn-primary btn-lg">See my matches</button>
