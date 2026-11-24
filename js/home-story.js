@@ -5,6 +5,8 @@
  *   Act 1  The building is quiet. As you scroll, its windows light up one by
  *          one, like people coming home.
  *   Act 2  The camera picks one window and moves through it into the room.
+ *   Act 3  Keep scrolling and the evenings inside pile up: each photo rises
+ *          over the last like a print laid on a stack (dots jump to one).
  * Light theme and dark theme each have their own building and their own
  * hand-mapped windows (MAPS below, in the image's own pixels).
  * Plain JavaScript: scroll position -> progress -> draw. Scrolling back up
@@ -68,7 +70,9 @@
     }
 
     /** Draw everything for progress p (0 = quiet building, 1 = inside the room) */
-    function draw(p) {
+    const A = .58;                                   // share of the scroll spent outside; the rest is the photos
+    function draw(P) {
+        const p = clamp(P / A);
         // Act 1: each window switches on at its own moment, with a short flicker
         const n = wins.length;
         wins.forEach(function (el, i) {
@@ -110,6 +114,23 @@
             el.style.opacity = c; el.style.transform = 'translateY(' + (1 - c) * 24 + 'px)';
         });
         setInside(p > .9);
+        photos(span(P, A + .02, .97));
+    }
+
+    /** Act 3: q 0..1 walks through the photos. Each new one rises from the bottom over the last,
+        which sinks back and dims, so it feels like prints being laid on a stack. */
+    function photos(q) {
+        const n = slides.length, f = q * (n - 1);
+        slides.forEach(function (img, i) {
+            const r = i === 0 ? 1 : ease(clamp(f - (i - 1)));          // how far this photo has risen in
+            const c = i === n - 1 ? 0 : ease(clamp(f - i));            // how far the next one has covered it
+            img.style.clipPath = r >= 1 ? '' : 'inset(' + (1 - r) * 100 + '% 0 0 0 round ' + 18 * (1 - r) + 'px ' + 18 * (1 - r) + 'px 0 0)';
+            img.style.transform = reduced ? '' : 'scale(' + (lerp(1.14, 1, r) * lerp(1, .93, c)) + ') translateY(' + (1 - r) * 6 + '%)';
+            img.style.filter = c > 0 ? 'brightness(' + lerp(1, .45, c) + ') blur(' + c * 3 + 'px)' : '';
+            img.style.visibility = r > 0 && c < 1 ? 'visible' : 'hidden';
+        });
+        const now = Math.min(n - 1, Math.round(f));
+        if (now !== slide) show(now);
     }
 
     // Once inside, the room becomes a slow slideshow of shared moments (dots jump to one)
@@ -117,20 +138,22 @@
     const dots = story.querySelector('.fyp-dots');
     dots.innerHTML = slides.map(function (img, i) { return '<button type="button" aria-label="Photo ' + (i + 1) + ': ' + img.alt + '"' + (i ? '' : ' aria-current="true"') + '></button>'; }).join('');
     const dotBtns = Array.from(dots.children);
-    let slide = 0, timer = 0, inside = false;
+    let slide = 0, inside = false;
     function show(i) {
-        slides[slide].classList.remove('on'); dotBtns[slide].removeAttribute('aria-current');
-        slide = (i + slides.length) % slides.length;
-        slides[slide].classList.add('on'); dotBtns[slide].setAttribute('aria-current', 'true');
+        dotBtns[slide].removeAttribute('aria-current');
+        slide = i; dotBtns[slide].setAttribute('aria-current', 'true');
     }
-    function play() { clearInterval(timer); if (!reduced) timer = setInterval(function () { show(slide + 1); }, 4800); }
     function setInside(now) {
         if (now === inside) return;
         inside = now; story.classList.toggle('fyp-inside', now);
-        if (now) { slides.forEach(function (img) { img.loading = 'eager'; }); play(); }
-        else { clearInterval(timer); show(0); }            // going back out: the window shows the first room again
+        if (now) slides.forEach(function (img) { img.loading = 'eager'; });
     }
-    dotBtns.forEach(function (b, i) { b.addEventListener('click', function () { show(i); play(); }); });
+    // A dot scrolls the page to the spot where that photo sits on top
+    dotBtns.forEach(function (b, i) { b.addEventListener('click', function () {
+        const q = A + .02 + (i / (slides.length - 1)) * (.97 - A - .02);
+        const top = story.getBoundingClientRect().top + window.scrollY + q * (story.offsetHeight - view.offsetHeight);
+        window.scrollTo({ top: top + 2, behavior: reduced ? 'auto' : 'smooth' });
+    }); });
 
     function progress() {
         const r = story.getBoundingClientRect();
