@@ -15,7 +15,7 @@ check_csrf();
 
 $me = (int) $_SESSION['user_id'];
 $listingId = (int) ($_POST['listing_id'] ?? 0);
-$back = 'listings/view.php?id=' . $listingId;
+$back = ($_POST['back'] ?? '') === 'matches' ? 'swipe/matches.php#loc-title' : 'listings/view.php?id=' . $listingId;
 
 $s = $pdo->prepare('SELECT id, user_id, title, status, loc_approx, lat FROM listings WHERE id = ?');
 $s->execute([$listingId]);
