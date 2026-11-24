@@ -33,16 +33,20 @@ function map_assets(): string
 function location_picker(string $prefix, $lat, $lng, string $button): string
 {
     $has = $lat !== '' && $lat !== null;
+    $id = 'loc-' . preg_replace('/[^a-z0-9]/', '', strtolower($prefix));
     $GLOBALS['extraScripts'] = ($GLOBALS['extraScripts'] ?? '') . map_assets();
-    return '<div class="loc-picker" data-prefix="' . e($prefix) . '">'
+    // The search box is visible straight away; the map opens only to show or fine-tune the pin.
+    return '<div class="loc-picker" data-prefix="' . e($prefix) . '" data-geo="' . e(url('geo.php')) . '">'
         . '<input type="hidden" name="' . e($prefix) . '_lat" value="' . e((string) $lat) . '">'
         . '<input type="hidden" name="' . e($prefix) . '_lng" value="' . e((string) $lng) . '">'
-        . '<div class="loc-summary"><span class="loc-address">' . ($has ? 'Location set ✓' : 'No location yet') . '</span>'
-        . '<button type="button" class="btn btn-sm js-loc-open">' . e($button) . '</button>'
+        . '<div class="loc-searchbox">'
+        . '<input type="search" class="loc-search" id="' . $id . '-q" placeholder="Search a place, e.g. IIM Indore or Vijay Nagar" autocomplete="off"'
+        . ' role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="' . $id . '-list" aria-label="Search a place by name">'
+        . '<ul class="loc-results" id="' . $id . '-list" role="listbox" hidden></ul></div>'
+        . '<div class="loc-summary"><span class="loc-address">' . ($has ? 'Location set' : 'No location yet') . '</span>'
+        . '<button type="button" class="link-btn small js-loc-open">' . e($has ? 'Adjust on map' : $button) . '</button>'
         . ($has ? ' <button type="button" class="link-btn small js-loc-clear">Remove</button>' : '') . '</div>'
         . '<div class="loc-panel" hidden>'
-        . '<input type="search" class="loc-search" placeholder="Search an area or address" aria-label="Search an area or address">'
-        . '<ul class="loc-results" hidden></ul>'
         . '<div class="loc-map"><div class="loc-canvas"></div><div class="loc-pin" aria-hidden="true"><span></span></div></div>'
         . '<p class="loc-live muted small" aria-live="polite">Drag the map to put the pin on the spot.</p>'
         . '<div class="btn-row"><button type="button" class="btn btn-primary btn-sm js-loc-confirm">Confirm this spot</button>'

@@ -88,20 +88,16 @@ const RMMap = (function () {
         };
     }
 
-    async function search(q) {
-        const url = KEY ? 'https://api.maptiler.com/geocoding/' + encodeURIComponent(q) + '.json?country=in&limit=5&key=' + KEY
-                        : 'https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&limit=5&q=' + encodeURIComponent(q);
-        const j = await (await fetch(url)).json();
-        return KEY ? j.features.map(f => ({ name: f.place_name, lat: f.center[1], lng: f.center[0] }))
-                   : j.map(x => ({ name: x.display_name, lat: +x.lat, lng: +x.lon }));
+    // Place search goes through our own geo.php (identifies us to OpenStreetMap, caches, max 1 req/s)
+    const GEO = (document.querySelector('.loc-picker') || { dataset: {} }).dataset.geo || 'geo.php';
+    async function search(q, near) {
+        const u = GEO + '?q=' + encodeURIComponent(q) + (near ? '&lat=' + near[0].toFixed(3) + '&lng=' + near[1].toFixed(3) : '');
+        const r = await fetch(u, { credentials: 'same-origin' });
+        return r.ok ? r.json() : [];
     }
     async function reverse(lat, lng) {
-        try {
-            const url = KEY ? 'https://api.maptiler.com/geocoding/' + lng + ',' + lat + '.json?limit=1&key=' + KEY
-                            : 'https://nominatim.openstreetmap.org/reverse?format=json&zoom=16&lat=' + lat + '&lon=' + lng;
-            const j = await (await fetch(url)).json();
-            return KEY ? (j.features[0] || {}).place_name : j.display_name;
-        } catch (e) { return ''; }
+        try { const r = await fetch(GEO + '?lat=' + lat + '&lng=' + lng, { credentials: 'same-origin' }); return r.ok ? ((await r.json()).name || '') : ''; }
+        catch (e) { return ''; }
     }
 
     // ---------- Fixed-pin location pickers ----------
@@ -109,42 +105,102 @@ const RMMap = (function () {
         const p = box.dataset.prefix;
         const lat = box.querySelector('[name=' + p + '_lat]'), lng = box.querySelector('[name=' + p + '_lng]');
         const panel = box.querySelector('.loc-panel'), live = box.querySelector('.loc-live'), pin = box.querySelector('.loc-pin');
-        const addr = box.querySelector('.loc-address');
-        let map = null, chosen = '';
-        box.querySelector('.js-loc-open').addEventListener('click', function () {
+        const addr = box.querySelector('.loc-address'), openBtn = box.querySelector('.js-loc-open');
+        let map = null, chosen = '', moving = false;
+
+        function setPoint(a, b, label) {
+            lat.value = (+a).toFixed(6); lng.value = (+b).toFixed(6);
+            addr.textContent = label ? 'Set: ' + label : 'Location set';
+            openBtn.textContent = 'Adjust on map';
+            if (!box.querySelector('.js-loc-clear')) {
+                const c = document.createElement('button'); c.type = 'button'; c.className = 'link-btn small js-loc-clear'; c.textContent = 'Remove';
+                c.addEventListener('click', clearPoint); openBtn.after(' ', c);
+            }
+        }
+        function clearPoint() { lat.value = lng.value = ''; addr.textContent = 'No location yet'; const c = box.querySelector('.js-loc-clear'); if (c) c.remove(); }
+        function openMap(a, b, z) {
             panel.hidden = false;
             if (!map) {
-                map = create(box.querySelector('.loc-canvas'), +lat.value || INDORE[0], +lng.value || INDORE[1], lat.value ? 15 : 12);
+                map = create(box.querySelector('.loc-canvas'), a, b, z);
                 map.onMove(() => pin.classList.add('lifting'), async () => {
                     pin.classList.remove('lifting'); pin.classList.add('landed'); setTimeout(() => pin.classList.remove('landed'), 400);
-                    const [a, b] = map.center(); live.textContent = 'Finding the address…';
-                    chosen = await reverse(a.toFixed(5), b.toFixed(5)); live.textContent = chosen || 'Pin placed. Confirm when ready.';
+                    if (moving) { moving = false; return; }                 // we moved it to a search result: keep that name
+                    const [x, y] = map.center(); live.textContent = 'Finding the address…';
+                    chosen = await reverse(x.toFixed(5), y.toFixed(5)); live.textContent = chosen || 'Pin placed. Confirm when ready.';
                 });
-            }
+            } else { moving = true; map.setCenter(a, b, z); }
             setTimeout(() => map.resize(), 50);
-        });
+        }
+
+        openBtn.addEventListener('click', () => openMap(+lat.value || INDORE[0], +lng.value || INDORE[1], lat.value ? 15 : 12));
         box.querySelector('.js-loc-cancel').addEventListener('click', () => { panel.hidden = true; });
         box.querySelector('.js-loc-confirm').addEventListener('click', function () {
             const [a, b] = map.center();
-            lat.value = a.toFixed(6); lng.value = b.toFixed(6);
-            addr.textContent = '📍 ' + (chosen ? chosen.split(',').slice(0, 3).join(',') : 'Location set ✓');
+            setPoint(a, b, chosen ? chosen.split(',').slice(0, 3).join(',') : '');
             panel.hidden = true;
         });
         const clear = box.querySelector('.js-loc-clear');
-        if (clear) clear.addEventListener('click', () => { lat.value = lng.value = ''; addr.textContent = 'No location yet'; clear.remove(); });
-        const q = box.querySelector('.loc-search'), list = box.querySelector('.loc-results'); let t;
+        if (clear) clear.addEventListener('click', clearPoint);
+
+        // ---- Search as you type (debounced; geo.php caches and paces requests to OpenStreetMap) ----
+        const q = box.querySelector('.loc-search'), list = box.querySelector('.loc-results');
+        let t, items = [], active = -1, seq = 0;
+        const show = on => { list.hidden = !on; q.setAttribute('aria-expanded', on ? 'true' : 'false'); };
+        const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        function render(msg) {
+            if (msg) { list.innerHTML = '<li class="loc-note" role="presentation">' + esc(msg) + '</li>'; show(true); return; }
+            list.innerHTML = items.map((x, i) => '<li role="option" id="' + q.id + '-o' + i + '" data-i="' + i + '" aria-selected="' + (i === active) + '">' +
+                '<strong>' + esc(x.short || x.name.split(',')[0]) + '</strong><span>' + esc(x.area || x.name) + '</span></li>').join('');
+            q.setAttribute('aria-activedescendant', active >= 0 ? q.id + '-o' + active : '');
+            show(items.length > 0);
+        }
+        function pick(i) {
+            const x = items[i]; if (!x) return;
+            q.value = x.short || x.name.split(',')[0];
+            show(false);
+            chosen = x.name;
+            setPoint(x.lat, x.lng, x.short || x.name.split(',').slice(0, 3).join(','));
+            openMap(x.lat, x.lng, 16);
+            live.textContent = 'Pin dropped at ' + (x.short || x.name) + '. Drag the map to fine-tune, then confirm.';
+        }
         q.addEventListener('input', function () {
-            clearTimeout(t); if (q.value.length < 3) { list.hidden = true; return; }
+            clearTimeout(t); active = -1;
+            const text = q.value.trim();
+            if (text.length < 3) { items = []; show(false); return; }
             t = setTimeout(async () => {
-                const items = await search(q.value);
-                list.innerHTML = items.map((x, i) => '<li data-i="' + i + '">' + x.name.replace(/</g, '&lt;') + '</li>').join('');
-                list.hidden = !items.length;
-                list.onclick = e => { const x = items[e.target.dataset.i]; if (x) { map.setCenter(x.lat, x.lng, 15); list.hidden = true; q.value = x.name.split(',')[0]; } };
-            }, 350);
+                const mine = ++seq;
+                render('Searching…');
+                const near = lat.value ? [+lat.value, +lng.value] : (map ? map.center() : INDORE);
+                let found = [];
+                try { found = await search(text, near); } catch (e) { found = null; }
+                if (mine !== seq) return;                                    // a newer search has started
+                items = found || [];
+                if (found === null) render('Search is unavailable right now. Use "Adjust on map" instead.');
+                else if (!items.length) render('No places found. Try a nearby landmark or area.');
+                else render();
+            }, 250);
         });
-        q.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });   // don't submit the form
+        q.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && items.length) pick(active >= 0 ? active : 0); return; }   // never submits the form
+            if (list.hidden || !items.length) return;
+            if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % items.length; render(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + items.length) % items.length; render(); }
+            else if (e.key === 'Escape') { show(false); }
+        });
+        list.addEventListener('mousedown', e => { const li = e.target.closest('li[data-i]'); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
+        q.addEventListener('blur', () => setTimeout(() => show(false), 150));
     }
     document.querySelectorAll('.loc-picker').forEach(wirePicker);
+
+    // ---------- A flat's own page: exact pin (owner / matched) or a circle over the rough area ----------
+    const lm = document.getElementById('listing-map');
+    if (lm) {
+        const a = +lm.dataset.lat, b = +lm.dataset.lng, exact = lm.dataset.exact === '1';
+        const m = create(lm, a, b, exact ? 15 : 14);
+        if (exact) m.marker(a, b, '<span class="flat-pin" aria-hidden="true"></span>');
+        else m.circle(a, b, 700);
+        setTimeout(() => m.resize(), 60);
+    }
 
     return { create, search, reverse, INDORE };
 })();

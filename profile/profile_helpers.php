@@ -226,7 +226,7 @@ function delete_photo_file(?string $fileName): void
 
 /**
  * Work out the profile picture from the picker:
- *   an icon (c01..c12) -> "avatar:c01"
+ *   an avatar (p01..p09) -> "avatar:p01"
  *   "upload"           -> the new uploaded file (or keep the current upload)
  *   "none"             -> NULL
  * Old uploaded photos that are replaced are deleted. Returns the value for
@@ -261,7 +261,7 @@ function resolve_picture(string $choice, ?array $file, int $userId, ?string $cur
 function picture_choice(?string $photo): string
 {
     if ($photo === null || $photo === '') return 'none';
-    return str_starts_with($photo, 'avatar:') ? substr($photo, 7) : 'upload';
+    return str_starts_with($photo, 'avatar:') ? avatar_id(substr($photo, 7)) : 'upload';
 }
 
 /** Empty string -> NULL for optional SQL columns */

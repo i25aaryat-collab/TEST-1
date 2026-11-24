@@ -197,7 +197,7 @@ p  { margin: 0 0 1em; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 legend { font-weight: 600; font-size: .95rem; padding: 0; margin-bottom: 6px; }
 
-input[type=text], input[type=email], input[type=password], input[type=number], input[type=search], select, textarea {
+input[type=text], input[type=email], input[type=tel], input[type=url], input:not([type]), input[type=password], input[type=number], input[type=search], select, textarea {
     width: 100%; padding: 11px 14px; min-height: 46px;
     font: inherit; color: var(--navy);
     background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
@@ -1153,3 +1153,33 @@ html:not([data-theme="dark"]) .fyp-stage {
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 74%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 8%, #000 93%, transparent 100%);
             mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 74%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 8%, #000 93%, transparent 100%);
 }
+
+/* Location picker: search box first, suggestions as you type */
+.loc-searchbox { position: relative; margin-bottom: 8px; }
+.loc-searchbox .loc-search { width: 100%; padding-left: 38px;
+  background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239a9aa8' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l4 4'/%3E%3C/svg%3E") no-repeat 13px center; }
+.loc-searchbox .loc-results { top: calc(100% + 4px); max-height: 300px; overflow-y: auto; }
+.loc-results li { display: grid; gap: 2px; }
+.loc-results li strong { font-size: .9rem; color: var(--navy); }
+.loc-results li span { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.loc-results li[aria-selected="true"] { background: var(--field); }
+.loc-results .loc-note { cursor: default; color: var(--muted); }
+.loc-panel { margin-top: 10px; }
+/* Suggestions sit above the map (Leaflet panes use z-index up to 1000) */
+.loc-searchbox { z-index: 1100; }
+.loc-searchbox .loc-results { z-index: 1100; }
+
+/* Map side list: every card the full width of the column, same spacing */
+#map-items { display: grid; gap: 10px; }
+.map-item { display: block; width: 100%; box-sizing: border-box; text-align: left; margin: 0; }
+.map-item .map-card { width: 100%; min-width: 0; }
+.map-item .map-card > div { flex: 1 1 auto; min-width: 0; }
+.map-card .map-score { margin-left: 4px; }
+
+/* Flat page: show the whole photo (no cropping), on a soft blurred copy of itself */
+.listing-hero:has(img) { height: auto; max-height: none; display: block; background: #111; }
+.listing-hero:has(img) img { display: block; width: 100%; height: auto; max-height: 72vh; object-fit: contain; position: relative; z-index: 1; }
+.listing-hero .hero-blur { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(24px) brightness(.55); z-index: 0; }
+.listing-hero .photo-note { z-index: 2; }
+.listing-map { height: 280px; }
+.flat-pin { display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; background: var(--coral); border: 3px solid #fff; transform: translate(-50%, -100%) rotate(-45deg); box-shadow: 0 3px 8px rgba(0,0,0,.3); }

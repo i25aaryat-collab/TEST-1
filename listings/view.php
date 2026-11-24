@@ -51,7 +51,7 @@ require __DIR__ . '/../includes/header.php';
 
 <div class="container container-narrow">
     <article class="card listing-view">
-        <div class="listing-hero"><?php if ($l['photo']): ?><img src="<?= e(photo_url($l['photo'])) ?>" alt="<?= is_representative_photo($l['photo']) ? 'Representative photo, not the actual room' : 'Photo of the room' ?>" referrerpolicy="no-referrer" loading="lazy"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><span class="no-photo"><img class="avatar" src="<?= e(photo_url($l['owner_photo'])) ?>" alt=""><span><?= e(explode(' ', $l['owner'])[0]) ?> hasn't added room photos yet</span></span><?php endif; ?></div>
+        <div class="listing-hero"><?php if ($l['photo']): ?><span class="hero-blur" aria-hidden="true" style="background-image:url('<?= e(photo_url($l['photo'])) ?>')"></span><img src="<?= e(photo_url($l['photo'])) ?>" alt="<?= is_representative_photo($l['photo']) ? 'Representative photo, not the actual room' : 'Photo of the room' ?>" referrerpolicy="no-referrer" loading="lazy"><?php if (is_representative_photo($l['photo'])): ?><span class="photo-note">Representative photo</span><?php endif; ?><?php else: ?><span class="no-photo"><img class="avatar" src="<?= e(photo_url($l['owner_photo'])) ?>" alt=""><span><?= e(explode(' ', $l['owner'])[0]) ?> hasn't added room photos yet</span></span><?php endif; ?></div>
         <div class="listing-price big"><?= $l['rent'] ? e(rupees((int) $l['rent'])) . '<small>/month</small>' : 'Rent on request' ?></div>
         <h1><?= e($l['title']) ?></h1>
         <p class="muted"><?= e($l['area']) ?>, <?= e($l['city']) ?> · available from <?= e(nice_date($l['available_from'])) ?><?= $l['status'] === 'closed' ? ' · <strong>Closed</strong>' : '' ?></p>
@@ -62,7 +62,7 @@ require __DIR__ . '/../includes/header.php';
             [$mlat, $mlng] = $exact ? [(float) $l['lat'], (float) $l['lng']] : approx_point((float) $l['lat'], (float) $l['lng']);
             $extraScripts = ($extraScripts ?? '') . map_assets(); ?>
             <div class="listing-map" id="listing-map" data-lat="<?= $mlat ?>" data-lng="<?= $mlng ?>" data-exact="<?= $exact ? 1 : 0 ?>"></div>
-            <p class="muted small"><?= $exact ? '📍 Exact location' : '◌ Approximate area' . ($l['loc_approx'] ? '' : '. The exact spot shows once you connect with the poster.') ?>
+            <p class="muted small"><?= $exact ? 'Exact location' : 'Approximate area' . ($l['loc_approx'] ? '' : '. The exact spot shows once you connect with the poster.') ?>
                 <?php if (!empty($me) && ($dn = distance_note($me, $l['lat'], $l['lng']))): ?> · <?= $dn ?><?php endif; ?></p>
         <?php endif; ?>
 
