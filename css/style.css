@@ -1115,3 +1115,33 @@ body { transition: background-color .35s, color .35s; }
 /* Dark mode: keep sent-message text and timestamps legible on the coral bubble. */
 [data-theme="dark"] .bubble-row.mine .bubble { background: #C83E49; border-color: #C83E49; color: #FFFFFF; }
 [data-theme="dark"] .bubble-row.mine .bubble-time { color: rgba(255,255,255,.82); }
+
+/* Dark mode: chat picker tabs and panels */
+[data-theme="dark"] .picker-tabs button { background: var(--field); color: var(--navy); }
+[data-theme="dark"] .picker-tabs button[aria-selected="true"] { background: var(--coral); color: #fff; }
+[data-theme="dark"] .picker, [data-theme="dark"] .picker-panel { background: var(--white); }
+[data-theme="dark"] .quick-replies button, [data-theme="dark"] .quick-reply { background: var(--field); color: var(--navy); border-color: var(--border); }
+
+/* Story building: no hard rectangle - its edges dissolve into the blurred backdrop */
+.fyp-stage {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 7%, #000 84%, transparent 97%);
+    -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 7%, #000 84%, transparent 97%);
+            mask-composite: intersect;
+}
+.fyp-backdrop { filter: blur(60px) brightness(.42) saturate(1.15); inset: -15%; }
+.fyp-view::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 70% 80% at 50% 50%, transparent 45%, rgba(8, 7, 10, .55) 100%); }
+.fyp-inside .fyp-view::after { opacity: 0; transition: opacity .6s; }
+html:not([data-theme="dark"]) .fyp-backdrop { filter: blur(70px) brightness(.8) saturate(1.25); }
+html:not([data-theme="dark"]) .fyp-stage {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%, #000 78%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 10%, #000 84%, transparent 97%);
+            mask-image: linear-gradient(to right, transparent 0, #000 22%, #000 78%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 10%, #000 84%, transparent 97%);
+}
+html:not([data-theme="dark"]) .fyp-view::after { background: radial-gradient(ellipse 70% 80% at 50% 50%, transparent 50%, rgba(30, 14, 8, .35) 100%); }
+html:not([data-theme="dark"]) .fyp-backdrop {
+    background-image: radial-gradient(ellipse 60% 45% at 50% 62%, rgba(240, 140, 70, .55), transparent 70%),
+                      linear-gradient(to bottom, #5d74a6 0%, #8d7fa8 22%, #d98a5c 48%, #6b3a24 72%, #1d120d 100%) !important;
+    filter: blur(20px); inset: -5%; transform: none;
+}
+html:not([data-theme="dark"]) .fyp { background: #1d120d; }
