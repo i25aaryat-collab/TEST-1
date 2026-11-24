@@ -77,7 +77,7 @@ require __DIR__ . '/../includes/header.php';
                         <form method="post" action="<?= e(url('listings/location_request.php')) ?>"><?= csrf_field() ?>
                             <input type="hidden" name="action" value="request"><input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
                             <button class="btn btn-sm">Request exact location</button>
-                            <span class="muted small"><?= e(explode(' ', $l['owner'])[0]) ?> decides whether to share it. You'll also see Street View once they do.</span>
+                            <span class="muted small"><?= e(explode(' ', $l['owner'])[0]) ?> decides whether to share it. You'll also see street photos of the spot once they do.</span>
                         </form>
                     <?php elseif ($myLocReq['status'] === 'pending'): ?>
                         <span class="pill-note">Exact location requested · waiting for <?= e(explode(' ', $l['owner'])[0]) ?></span>
@@ -130,11 +130,11 @@ require __DIR__ . '/../includes/header.php';
                 <?php if ($myGroups): ?>
                     <form method="post" action="<?= e(url('groups/action.php')) ?>" class="inline-form"><?= csrf_field() ?>
                         <input type="hidden" name="action" value="add"><input type="hidden" name="from_listing" value="1"><input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
-                        <select name="group_id" aria-label="Shortlist"><?php foreach ($myGroups as $g): ?><option value="<?= (int) $g['id'] ?>"><?= e($g['name']) ?></option><?php endforeach; ?></select>
-                        <button class="btn">Save to shortlist</button>
+                        <select name="group_id" aria-label="Household"><?php foreach ($myGroups as $g): ?><option value="<?= (int) $g['id'] ?>"><?= e($g['name']) ?></option><?php endforeach; ?></select>
+                        <button class="btn">Save to household</button>
                     </form>
                 <?php else: ?>
-                    <a class="btn" href="<?= e(url('groups/index.php')) ?>">Start a flat shortlist</a>
+                    <a class="btn" href="<?= e(url('groups/index.php')) ?>">Start a household</a>
                 <?php endif; ?>
             <?php endif; ?>
             <?php if (is_logged_in() && !$isOwner && !is_admin()): ?>

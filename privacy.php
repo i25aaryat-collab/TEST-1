@@ -59,7 +59,7 @@ require __DIR__ . '/includes/header.php';
             <tr><td>Supabase</td><td>Stores the database</td><td>Everything listed in section 2</td></tr>
             <tr><td>Cloudflare Turnstile</td><td>The "I'm human" check at login and sign-up</td><td>Your IP address and basic browser signals, for that check only</td></tr>
             <tr><td>OpenStreetMap services (Photon, Nominatim), Esri and CARTO</td><td>Place search and map images</td><td>The place you search for (sent from our server, not linked to your name) and, for map images, your IP address</td></tr>
-            <tr><td>Google Street View</td><td>Street-level view of a flat, when you open it</td><td>The location being viewed and your IP address</td></tr>
+            <tr><td>Mapillary</td><td>Street-level photos near a flat, when you can see its exact location</td><td>The location being viewed and your IP address</td></tr>
         </tbody>
     </table>
     <p>Flat photos from other websites are copied to our database the first time they are shown, so those websites do not see who is looking at them. We do not share your data with anyone else, except where the law requires it.</p>

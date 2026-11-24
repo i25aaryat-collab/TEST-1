@@ -4,7 +4,7 @@
  * POST only.
  *   action=request  (a seeker)  -> asks the owner for a flat's exact location
  *   action=approve / decline (the flat's owner, with request_id) -> answers it
- * After approval the seeker sees the exact pin and Street View on the flat page.
+ * After approval the seeker sees the exact pin and street photos (Mapillary) on the flat page.
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';

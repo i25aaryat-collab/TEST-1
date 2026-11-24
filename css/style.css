@@ -1257,3 +1257,22 @@ html:not([data-theme="dark"]) .fyp-stage {
 .choice-pills.is-invalid span { border-color: var(--red); }
 #mly-view { position: relative; background: var(--field); display: grid; place-items: center; overflow: hidden; }
 .street-view-box .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Flats: matches pinned on top */
+.group-title { font-size: 1.05rem; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+.match-tag { color: var(--coral); font-weight: 600; }
+.check-inline { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; white-space: nowrap; cursor: pointer; }
+.forgot-link { display: inline-block; margin-top: 6px; }
+
+/* Households: how full, settled */
+.household-status { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.household-status.is-full { border: 1px solid var(--coral); }
+.household-status.is-settled { background: var(--green-soft); border: 1px solid var(--green); }
+html[data-theme="dark"] .household-status.is-settled { background: rgba(43, 182, 115, .12); }
+.household-status .grow { flex: 1; min-width: 200px; }
+.hh-seats { display: flex; gap: 6px; }
+.hh-seats span { width: 26px; height: 26px; border-radius: 50%; border: 2px dashed var(--border); }
+.hh-seats span.on { border: 0; background: var(--coral); }
+.is-settled .hh-seats span.on { background: var(--green); }
+.settled-pill { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--green-soft); color: #1d7a4d; font-size: .75rem; font-weight: 600; vertical-align: middle; }
+.settled-note { margin-top: 8px; }

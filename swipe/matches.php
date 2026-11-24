@@ -80,7 +80,7 @@ require __DIR__ . '/../includes/header.php';
     <div class="page-head">
         <div>
             <h1>Requests and matches</h1>
-            <p class="muted">Accept a request to match. Matches can chat. <a href="<?= e(url('groups/index.php')) ?>">Flat shortlists →</a> · <a href="<?= e(url('communities/index.php')) ?>">Communities →</a></p>
+            <p class="muted">Accept a request to match. Matches can chat. <a href="<?= e(url('groups/index.php')) ?>">Households →</a> · <a href="<?= e(url('communities/index.php')) ?>">Communities →</a></p>
         </div>
         <a class="btn btn-primary" href="<?= e(url('swipe/swipe.php')) ?>">Find more people</a>
     </div>
@@ -110,7 +110,7 @@ require __DIR__ . '/../includes/header.php';
     <?php if ($locAsks): ?>
         <section class="card requests" aria-labelledby="loc-title">
             <h2 id="loc-title">Asking for your flat's exact location <span class="count-pill"><?= count($locAsks) ?></span></h2>
-            <p class="muted small">They only see the approximate area until you share. Sharing also shows them Street View.</p>
+            <p class="muted small">They only see the approximate area until you share. Sharing also shows them street photos of the spot.</p>
             <ul class="request-list">
                 <?php foreach ($locAsks as $q): $qs = $q['answers'] !== null ? compatibility_score($me, $q) : null; ?>
                     <li class="request-item">

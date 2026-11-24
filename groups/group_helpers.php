@@ -1,7 +1,7 @@
 <?php
 /**
  * groups/group_helpers.php  —  Owner: M4 (Matching + Flats)
- * Private flat-hunting groups of connected flatmates: a shared shortlist of
+ * Households: private groups of connected flatmates with a shared shortlist of
  * existing listings and one poll, "Which flat should we visit first?".
  * Every page checks membership on the server.
  */
@@ -27,9 +27,24 @@ function my_connections(PDO $pdo, int $userId): array
 /** Groups I belong to */
 function my_groups(PDO $pdo, int $userId): array
 {
-    $s = $pdo->prepare('SELECT g.id, g.name, (SELECT COUNT(*) FROM shortlist s WHERE s.group_id = g.id) AS flats,
+    $s = $pdo->prepare('SELECT g.id, g.name, g.settled_at, (SELECT COUNT(*) FROM shortlist s WHERE s.group_id = g.id) AS flats,
                                (SELECT COUNT(*) FROM group_members x WHERE x.group_id = g.id) AS members
                         FROM flat_groups g JOIN group_members m ON m.group_id = g.id WHERE m.user_id = ? ORDER BY g.id DESC');
     $s->execute([$userId]);
     return $s->fetchAll();
+}
+
+/** Settle a household: everyone in it has found their people and stops showing up in Discover */
+function settle_household(PDO $pdo, int $groupId, bool $settled): void
+{
+    $pdo->prepare('UPDATE flat_groups SET settled_at = ? WHERE id = ?')->execute([$settled ? date('Y-m-d H:i:s') : null, $groupId]);
+    $pdo->prepare('UPDATE profiles SET looking = ? WHERE user_id IN (SELECT user_id FROM group_members WHERE group_id = ?)')->execute([$settled ? 0 : 1, $groupId]);
+}
+
+/** The settled household I'm in (for the "you've found your people" note), or null */
+function my_settled_household(PDO $pdo, int $userId): ?array
+{
+    $s = $pdo->prepare('SELECT g.id, g.name FROM flat_groups g JOIN group_members m ON m.group_id = g.id WHERE m.user_id = ? AND g.settled_at IS NOT NULL ORDER BY g.settled_at DESC LIMIT 1');
+    $s->execute([$userId]);
+    return $s->fetch() ?: null;
 }

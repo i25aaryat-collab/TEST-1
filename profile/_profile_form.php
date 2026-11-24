@@ -136,6 +136,17 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
         <?= error_box($errors, 'stay') ?>
     </div>
 
+    <div class="form-group">
+        <label>How many people do you want to live with?</label>
+        <div class="choice-pills<?= isset($errors['flatmates']) ? ' is-invalid' : '' ?>" role="radiogroup">
+            <?php foreach (FLATMATE_OPTIONS as $k => $label): ?>
+                <label class="choice-pill"><input type="radio" name="flatmates" value="<?= $k ?>" <?= (string) $values['flatmates'] === (string) $k ? 'checked' : '' ?> required><span><?= e($label) ?></span></label>
+            <?php endforeach; ?>
+        </div>
+        <p class="hint">Not counting you. Once your household has this many people, you can tell us you've found your people and stop showing up in Discover.</p>
+        <?= error_box($errors, 'flatmates') ?>
+    </div>
+
     <div class="row-2">
         <div class="form-group">
             <label for="budget_min">Minimum rent (₹ / month)</label>

@@ -138,6 +138,7 @@ require __DIR__ . '/../includes/header.php';
                         <button type="button" class="password-toggle" aria-label="Show password">Show</button>
                     </div>
                     <div class="field-error" data-error-for="password"><?= e($errors['password'] ?? '') ?></div>
+                    <a class="small forgot-link" href="<?= e(url('auth/forgot.php')) ?>">Forgot password?</a>
                 </div>
 
                 <div class="form-group">
