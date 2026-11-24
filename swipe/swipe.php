@@ -85,9 +85,9 @@ usort($people, fn($x, $y) => match ($sort) {
 function score_reasons(array $breakdown): array
 {
     $good = ['Age' => 'Ages fit', 'Sleep and daily rhythm' => 'Sleep fits', 'Cleanliness and chores' => 'Tidiness fits',
-             'Guests and shared space' => 'Guests fit', 'Food and household practices' => 'Food fits', 'Comfort and boundaries' => 'Comfort fits'];
+             'Guests and shared space' => 'Guests fit', 'Food and household practices' => 'Food fits', 'Comfort and boundaries' => 'Comfort fits', 'How long you stay' => 'Same length of stay'];
     $bad  = ['Age' => 'Outside age range', 'Sleep and daily rhythm' => 'Different rhythms', 'Cleanliness and chores' => 'Tidiness differs',
-             'Guests and shared space' => 'Guests differ', 'Food and household practices' => 'Food habits differ', 'Comfort and boundaries' => 'Boundaries differ'];
+             'Guests and shared space' => 'Guests differ', 'Food and household practices' => 'Food habits differ', 'Comfort and boundaries' => 'Boundaries differ', 'How long you stay' => 'Different stay lengths'];
     $plus = $minus = [];
     foreach ($breakdown as $factor => $pts) {
         $max = COMPATIBILITY_MAX[$factor] ?? 100;
@@ -222,7 +222,7 @@ require __DIR__ . '/../includes/header.php';
                                 <img class="avatar avatar-md" src="<?= e(photo_url($c['photo'])) ?>" alt="">
                                 <div class="result-who">
                                     <h2><a href="<?= e(url('profile/view_profile.php?id=' . (int) $c['uid'])) ?>"><?= e($first) ?>, <?= (int) $c['age'] ?></a></h2>
-                                    <p class="muted small"><?= $anyCity ? e($c['city']) . ' · ' : '' ?><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?></p>
+                                    <p class="muted small"><?= $anyCity ? e($c['city']) . ' · ' : '' ?><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?><?= stay_label($c) !== '' ? ' · stays ' . e(stay_label($c)) : '' ?></p>
                                 </div>
                                 <?= score_ring($c['score']) ?>
                             </div>

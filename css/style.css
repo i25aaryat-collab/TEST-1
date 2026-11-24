@@ -1249,3 +1249,11 @@ html:not([data-theme="dark"]) .fyp-stage {
 .street-view-box { margin-top: 16px; display: grid; gap: 8px; justify-items: start; }
 .street-view { width: 100%; height: 300px; border: 0; border-radius: var(--radius-sm); }
 .h-small { font-size: 1rem; margin: 0; }
+
+/* Stay length: pill radio group */
+.choice-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice-pill input { position: absolute; opacity: 0; pointer-events: none; }
+.choice-pill span { display: inline-block; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; background: var(--field); font-size: .9rem; }
+.choice-pill input:checked + span { background: var(--coral); border-color: var(--coral); color: #fff; }
+.choice-pill input:focus-visible + span { outline: 2px solid var(--coral); outline-offset: 2px; }
+.choice-pills.is-invalid span { border-color: var(--red); }

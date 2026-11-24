@@ -20,7 +20,7 @@ const MIN_BUDGET = 1000;
 function profile_defaults(): array
 {
     return [
-        'age' => '', 'gender' => '', 'gender_text' => '', 'city' => '', 'budget_min' => '', 'budget_max' => '',
+        'age' => '', 'gender' => '', 'gender_text' => '', 'city' => '', 'budget_min' => '', 'budget_max' => '', 'stay' => '',
         'languages' => [], 'bio' => '', 'avatar' => '',
         'college' => '', 'college_status' => '', 'visibility' => 'everyone',
         'religion' => 'Prefer not to say', 'religion_pref' => 'any', 'culture_note' => '',
@@ -48,6 +48,7 @@ function read_profile_input(array $post): array
         'city'        => ucwords(strtolower($city)),
         'budget_min'  => trim((string) ($post['budget_min'] ?? '')),
         'budget_max'  => trim((string) ($post['budget_max'] ?? '')),
+        'stay'        => (string) ($post['stay'] ?? ''),
         'languages'   => is_array($langs) ? array_values(array_map('strval', $langs)) : [],
         'bio'         => trim((string) ($post['bio'] ?? '')),
         'avatar'      => (string) ($post['avatar'] ?? ''),   // c01..c12, "upload" or "none"
@@ -138,6 +139,7 @@ function validate_profile(array $d): array
         $lat = $d[$p . '_lat']; $lng = $d[$p . '_lng'];
         if (($lat === '') !== ($lng === '') || ($lat !== '' && (abs((float) $lat) > 90 || abs((float) $lng) > 180))) $errors[$p . '_lat'] = 'Pick the location on the map again.';
     }
+    if (!isset(STAY_OPTIONS[(int) $d['stay']])) $errors['stay'] = 'Pick how long you plan to stay.';
     if (!is_int_between($d['radius_km'], 1, 50)) $errors['radius_km'] = 'Pick a distance from 1 to 50 km.';
 
     // Private contact details (shared only by choice)
@@ -272,7 +274,7 @@ function profile_form_columns(array $v): array
 {
     return [
         'age' => (int) $v['age'], 'gender' => $v['gender'], 'gender_text' => $v['gender'] === 'other' ? nullable($v['gender_text']) : null, 'city' => $v['city'],
-        'budget_min' => (int) $v['budget_min'], 'budget_max' => (int) $v['budget_max'],
+        'budget_min' => (int) $v['budget_min'], 'budget_max' => (int) $v['budget_max'], 'stay' => (int) $v['stay'],
         'languages' => languages_to_string($v['languages']), 'bio' => $v['bio'],
         'college' => nullable($v['college']), 'college_status' => nullable($v['college_status']), 'visibility' => $v['visibility'],
         'religion' => $v['religion'], 'religion_pref' => $v['religion_pref'], 'culture_note' => nullable($v['culture_note']),

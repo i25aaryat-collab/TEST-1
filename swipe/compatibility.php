@@ -103,6 +103,17 @@ function compatibility_result(array $a, array $b): array
         if ($steps >= 2 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
     }
 
+    // How long each wants to stay counts like one more question (same 1..5 scale and formula)
+    if (!empty($a['stay']) && !empty($b['stay'])) {
+        $steps = abs((int) $a['stay'] - (int) $b['stay']);
+        $fit = 100 - 25 * $steps;
+        $sum += $fit; $shared++;
+        $sections['How long you stay'][] = $fit;
+        $items[] = ['q' => 'How long you want to live together', 'you' => (int) $a['stay'], 'them' => (int) $b['stay'], 'fit' => $fit,
+                    'you_label' => stay_label($a), 'them_label' => stay_label($b)];
+        if ($steps >= 2 && (!$largestDifference || 25 * $steps > $largestDifference[1])) $largestDifference = ['How long you each plan to stay', 25 * $steps];
+    }
+
     return [
         'score' => $shared >= MIN_SHARED ? (int) round($sum / $shared) : null,
         'shared' => $shared,
@@ -167,7 +178,7 @@ function score_explain(array $r): string
 {
     $rows = '';
     foreach ($r['items'] ?? [] as $i) {
-        $rows .= '<tr><td>' . e($i['q']) . '</td><td>' . (int) $i['you'] . '</td><td>' . (int) $i['them'] . '</td><td>100 − 25 × ' . abs((int) $i['you'] - (int) $i['them']) . ' = <strong>' . (int) $i['fit'] . '</strong></td></tr>';
+        $rows .= '<tr><td>' . e($i['q']) . '</td><td>' . (isset($i['you_label']) ? e($i['you_label']) . ' (' . (int) $i['you'] . ')' : (int) $i['you']) . '</td><td>' . (isset($i['them_label']) ? e($i['them_label']) . ' (' . (int) $i['them'] . ')' : (int) $i['them']) . '</td><td>100 − 25 × ' . abs((int) $i['you'] - (int) $i['them']) . ' = <strong>' . (int) $i['fit'] . '</strong></td></tr>';
     }
     $n = (int) $r['shared'];
     $result = $r['score'] === null

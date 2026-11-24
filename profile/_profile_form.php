@@ -123,7 +123,18 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
         <?= error_box($errors, 'photo') ?>
     </fieldset>
 
-    <h3 class="form-section-title"><span class="step-no">2</span> Budget</h3>
+    <h3 class="form-section-title"><span class="step-no">2</span> Budget and stay</h3>
+
+    <div class="form-group">
+        <label>How long do you want to live together?</label>
+        <div class="choice-pills<?= isset($errors['stay']) ? ' is-invalid' : '' ?>" role="radiogroup">
+            <?php foreach (STAY_OPTIONS as $k => $label): ?>
+                <label class="choice-pill"><input type="radio" name="stay" value="<?= $k ?>" <?= (string) $values['stay'] === (string) $k ? 'checked' : '' ?> required><span><?= e($label) ?></span></label>
+            <?php endforeach; ?>
+        </div>
+        <p class="hint">Someone here for a semester and someone signing a two-year lease rarely suit each other, so this counts towards your match score.</p>
+        <?= error_box($errors, 'stay') ?>
+    </div>
 
     <div class="row-2">
         <div class="form-group">

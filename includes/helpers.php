@@ -1,4 +1,7 @@
 <?php
+/** How long someone wants to live together (profiles.stay). 1..5 so it scores like a test answer. */
+const STAY_OPTIONS = [1 => '1–3 months', 2 => '3–6 months', 3 => '6–12 months', 4 => '1–2 years', 5 => '2+ years'];
+function stay_label($p): string { $v = (int) (is_array($p) ? ($p['stay'] ?? 0) : $p); return STAY_OPTIONS[$v] ?? ''; }
 /* ==========================================================================
  * includes/helpers.php  —  Owner: M1 (Lead)
  * --------------------------------------------------------------------------
