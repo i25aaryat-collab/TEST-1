@@ -1257,3 +1257,8 @@ html:not([data-theme="dark"]) .fyp-stage {
 .choice-pills.is-invalid span { border-color: var(--red); }
 #mly-view { position: relative; background: var(--field); display: grid; place-items: center; overflow: hidden; }
 .street-view-box .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Flats: matches pinned on top */
+.group-title { font-size: 1.05rem; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+.match-tag { color: var(--coral); font-weight: 600; }
+.check-inline { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; white-space: nowrap; cursor: pointer; }

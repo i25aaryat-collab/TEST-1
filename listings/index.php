@@ -21,6 +21,15 @@ $roomType = array_key_exists($_GET['room_type'] ?? '', ROOM_TYPES) ? $_GET['room
 $furnished = in_array($_GET['furnished'] ?? '', ['yes', 'no'], true) ? $_GET['furnished'] : '';
 $sorts = ['new' => ['l.created_at DESC', 'Newest first'], 'cheap' => ['l.rent ASC', 'Cheapest first'], 'soon' => ['l.available_from ASC', 'Available soonest']];
 $sort  = array_key_exists($_GET['sort'] ?? '', $sorts) ? $_GET['sort'] : 'new';
+$onlyMatches = !empty($_GET['matches']);
+
+// People I've matched with: their flats are pinned on top (and can be the only ones shown)
+$matchIds = [];
+if (is_logged_in() && !is_admin()) {
+    $st = $pdo->prepare('SELECT CASE WHEN user1_id = ? THEN user2_id ELSE user1_id END FROM matches WHERE user1_id = ? OR user2_id = ?');
+    $st->execute([$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]);
+    $matchIds = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+}
 
 // Each flat is shown through the PERSON who posted it: their name, picture and your score with them.
 $sql = "SELECT l.*, u.name AS owner, u.email AS owner_email, p.photo AS owner_photo, p.answers, p.age, p.age_min, p.age_max
@@ -32,6 +41,7 @@ if ($city !== '')       { $sql .= ' AND l.city = ?'; $params[] = $city; }
 if ($maxRent !== null)  { $sql .= ' AND l.rent <= ?'; $params[] = $maxRent; }
 if ($roomType !== '')   { $sql .= ' AND l.room_type = ?'; $params[] = $roomType; }
 if ($furnished !== '')  { $sql .= ' AND l.furnished = ?'; $params[] = $furnished; }
+if ($onlyMatches)       { $sql .= $matchIds ? ' AND l.user_id IN (' . implode(',', $matchIds) . ')' : ' AND 1 = 0'; }   // ints only
 $sql .= ' ORDER BY ' . $sorts[$sort][0];             // only fixed, known ORDER BY strings
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -46,8 +56,13 @@ const DIRECTORY_EMAIL = 'listings@roomiematch.test';    // the account holding i
 foreach ($listings as &$l) {
     $l['is_directory'] = $l['owner_email'] === DIRECTORY_EMAIL;
     $l['result'] = ($me && !$l['is_directory'] && $l['age']) ? compatibility_result($me, $l) : null;
+    $l['is_match'] = in_array((int) $l['user_id'], $matchIds, true);
 }
 unset($l);
+$groups = array_filter([
+    'From your matches' => array_values(array_filter($listings, fn($l) => $l['is_match'])),
+    'Rooms'             => array_values(array_filter($listings, fn($l) => !$l['is_match'])),
+]);
 
 // People (not listings) who have a flat in mind: comparing, shortlisted or chosen
 $people = [];
@@ -126,6 +141,9 @@ require __DIR__ . '/../includes/header.php';
         <select id="furnished" name="furnished"><option value="">Furnished or not</option><option value="yes" <?= $furnished === 'yes' ? 'selected' : '' ?>>Furnished</option><option value="no" <?= $furnished === 'no' ? 'selected' : '' ?>>Unfurnished</option></select>
         <label class="sr-only" for="sort">Sort</label>
         <select id="sort" name="sort"><?php foreach ($sorts as $k => [, $t]): ?><option value="<?= $k ?>" <?= $k === $sort ? 'selected' : '' ?>><?= $t ?></option><?php endforeach; ?></select>
+        <?php if (is_logged_in() && !is_admin()): ?>
+            <label class="check-inline"><input type="checkbox" name="matches" value="1" <?= $onlyMatches ? 'checked' : '' ?> onchange="this.form.submit()"> Only my matches<?= $matchIds ? ' (' . count($matchIds) . ')' : '' ?></label>
+        <?php endif; ?>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
 
@@ -154,18 +172,20 @@ require __DIR__ . '/../includes/header.php';
     <?php if (!$listings): ?>
         <div class="card empty-state">
             <div class="empty-icon"><?= house_icon() ?></div>
-            <h2>No rooms match that</h2>
-            <p>Try fewer filters, or post a room yourself.</p>
+            <h2><?= $onlyMatches ? 'None of your matches has listed a room' : 'No rooms match that' ?></h2>
+            <p><?= $onlyMatches ? 'Matches who are still looking for a place won\'t have one here. Untick "Only my matches" to see every room.' : 'Try fewer filters, or post a room yourself.' ?></p>
             <a class="btn" href="<?= e(url('listings/index.php')) ?>">Clear filters</a>
         </div>
     <?php else: ?>
+        <?php foreach ($groups as $groupTitle => $groupListings): ?>
+        <?php if (count($groups) > 1 || $groupTitle !== 'Rooms'): ?><h3 class="group-title"><?= e($groupTitle) ?> <span class="count-pill"><?= count($groupListings) ?></span></h3><?php endif; ?>
         <div class="match-grid">
-            <?php foreach ($listings as $l): ?>
+            <?php foreach ($groupListings as $l): ?>
                 <article class="card listing-card">
                     <?php if (!$l['is_directory']): ?><div class="poster">
                             <img class="avatar avatar-sm" src="<?= e(photo_url($l['owner_photo'])) ?>" alt="">
                             <div><strong><a href="<?= e(url('profile/view_profile.php?id=' . (int) $l['user_id'])) ?>"><?= e(explode(' ', $l['owner'])[0]) ?></a></strong><?= $l['age'] ? ', ' . (int) $l['age'] : '' ?>
-                                <div class="muted small">has a room to share</div></div>
+                                <div class="muted small"><?= $l['is_match'] ? '<span class="match-tag">Your match</span> · ' : '' ?>has a room to share</div></div>
                             <?php if ($l['result']): ?><span class="poster-score <?= score_class($l['result']['score']) ?>" title="Your score with <?= e(explode(' ', $l['owner'])[0]) ?>"><?= $l['result']['score'] === null ? '–' : $l['result']['score'] . '%' ?></span><?php endif; ?>
                     </div><?php endif; ?>
                     <?php $nophoto = '<span class="no-photo"><img class="avatar" src="' . e(photo_url($l['owner_photo'])) . '" alt=""><span>' . e(explode(' ', $l['owner'])[0]) . ' hasn\'t added room photos yet</span></span>'; ?>
@@ -185,6 +205,7 @@ require __DIR__ . '/../includes/header.php';
                 </article>
             <?php endforeach; ?>
         </div>
+        <?php endforeach; ?>
     <?php endif; ?>
 </div>
 
