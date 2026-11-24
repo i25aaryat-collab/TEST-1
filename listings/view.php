@@ -46,6 +46,13 @@ if (is_logged_in() && !is_admin() && !$isOwner) {
 }
 
 $pageTitle = $l['title'];
+if ($isOwner) {                                    // the owner's own profile, to score the people asking for the location
+    $me = $pdo->prepare('SELECT * FROM profiles WHERE user_id = ?');
+    $me->execute([$_SESSION['user_id']]); $me = $me->fetch() ?: null;
+}
+// Exact location: owner, a match, or someone the owner approved after a request
+$myLocReq = (is_logged_in() && !$isOwner && !is_admin()) ? my_location_request($pdo, (int) $l['id'], (int) $_SESSION['user_id']) : null;
+$locRequests = $isOwner ? pending_location_requests($pdo, (int) $l['id']) : [];
 require __DIR__ . '/../includes/header.php';
 ?>
 
@@ -58,12 +65,45 @@ require __DIR__ . '/../includes/header.php';
         <div class="tags"><span class="tag"><?= e(ROOM_TYPES[$l['room_type']]) ?></span><span class="tag"><?= $l['furnished'] === 'yes' ? 'Furnished' : 'Unfurnished' ?></span></div>
         <p style="margin-top:16px"><?= nl2br(e($l['description'])) ?></p>
         <?php if ($l['lat'] !== null):
-            $exact = !$l['loc_approx'] && ($isOwner || $state === 'matched');
+            $exact = !$l['loc_approx'] && ($isOwner || $state === 'matched' || ($myLocReq['status'] ?? '') === 'approved');
             [$mlat, $mlng] = $exact ? [(float) $l['lat'], (float) $l['lng']] : approx_point((float) $l['lat'], (float) $l['lng']);
             $extraScripts = ($extraScripts ?? '') . map_assets(); ?>
             <div class="listing-map" id="listing-map" data-lat="<?= $mlat ?>" data-lng="<?= $mlng ?>" data-exact="<?= $exact ? 1 : 0 ?>"></div>
-            <p class="muted small"><?= $exact ? 'Exact location' : 'Approximate area' . ($l['loc_approx'] ? '' : '. The exact spot shows once you connect with the poster.') ?>
+            <p class="muted small"><?= $exact ? 'Exact location' : 'Approximate area (about 1 km)' ?>
                 <?php if (!empty($me) && ($dn = distance_note($me, $l['lat'], $l['lng']))): ?> · <?= $dn ?><?php endif; ?></p>
+            <?php if (!$exact && !$l['loc_approx'] && is_logged_in() && !$isOwner && !is_admin()): ?>
+                <div class="loc-request">
+                    <?php if (!$myLocReq): ?>
+                        <form method="post" action="<?= e(url('listings/location_request.php')) ?>"><?= csrf_field() ?>
+                            <input type="hidden" name="action" value="request"><input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
+                            <button class="btn btn-sm">Request exact location</button>
+                            <span class="muted small"><?= e(explode(' ', $l['owner'])[0]) ?> decides whether to share it. You'll also see Street View once they do.</span>
+                        </form>
+                    <?php elseif ($myLocReq['status'] === 'pending'): ?>
+                        <span class="pill-note">Exact location requested · waiting for <?= e(explode(' ', $l['owner'])[0]) ?></span>
+                    <?php else: ?>
+                        <span class="pill-note muted"><?= e(explode(' ', $l['owner'])[0]) ?> prefers to share the exact spot later, once you've talked.</span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            <?php if ($exact): ?><?= street_view((float) $l['lat'], (float) $l['lng']) ?><?php endif; ?>
+            <?php if ($isOwner && $locRequests): ?>
+                <div class="loc-requests-owner">
+                    <h3 class="h-small">Asking for the exact location (<?= count($locRequests) ?>)</h3>
+                    <?php foreach ($locRequests as $rq): $rqScore = !empty($me) ? compatibility_score($me, $rq) : null; ?>
+                        <div class="loc-rq">
+                            <img class="avatar" src="<?= e(photo_url($rq['photo'])) ?>" alt="">
+                            <div class="grow"><a href="<?= e(url('profile/view_profile.php?id=' . (int) $rq['uid'])) ?>"><strong><?= e($rq['name']) ?></strong></a>
+                                <div class="muted small"><?= $rqScore !== null ? (int) $rqScore . '% compatible · ' : '' ?>asked <?= e(nice_date($rq['created_at'])) ?></div></div>
+                            <form method="post" action="<?= e(url('listings/location_request.php')) ?>" class="inline-form"><?= csrf_field() ?>
+                                <input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>"><input type="hidden" name="request_id" value="<?= (int) $rq['id'] ?>">
+                                <button class="btn btn-primary btn-sm" name="action" value="approve">Share location</button>
+                                <button class="btn btn-ghost btn-sm" name="action" value="decline">Not now</button>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <div class="owner-row">

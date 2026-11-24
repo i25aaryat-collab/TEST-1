@@ -66,3 +66,51 @@ function validate_listing(array $d): array
     }
     return $errors;
 }
+
+// ---------- "Request exact location" (table location_requests, created on first use) ----------
+
+/** Run a query; create location_requests the first time it is needed */
+function lr_db(PDO $pdo, callable $fn)
+{
+    try { return $fn(); }
+    catch (PDOException $e) {
+        if (!in_array($e->getCode(), ['42P01', '42S02'], true)) throw $e;
+        $file = __DIR__ . '/../database/migration_v11_location_requests_' . (DB_DRIVER === 'pgsql' ? 'pg' : 'mysql') . '.sql';
+        foreach (array_filter(array_map('trim', explode(';', preg_replace('/^--.*$/m', '', file_get_contents($file))))) as $sql) $pdo->exec($sql);
+        return $fn();
+    }
+}
+
+/** My request for a flat's exact location: null, or the row (status pending / approved / declined) */
+function my_location_request(PDO $pdo, int $listingId, int $userId): ?array
+{
+    return lr_db($pdo, function () use ($pdo, $listingId, $userId) {
+        $s = $pdo->prepare('SELECT * FROM location_requests WHERE listing_id = ? AND requester_id = ?');
+        $s->execute([$listingId, $userId]);
+        return $s->fetch() ?: null;
+    });
+}
+
+/** Pending requests on a flat, newest first, with the person's name and photo (for the owner) */
+function pending_location_requests(PDO $pdo, int $listingId): array
+{
+    return lr_db($pdo, function () use ($pdo, $listingId) {
+        $s = $pdo->prepare("SELECT r.id, r.created_at, u.id AS uid, u.name, p.photo, p.answers, p.age
+                            FROM location_requests r JOIN users u ON u.id = r.requester_id LEFT JOIN profiles p ON p.user_id = u.id
+                            WHERE r.listing_id = ? AND r.status = 'pending' ORDER BY r.created_at DESC");
+        $s->execute([$listingId]);
+        return $s->fetchAll();
+    });
+}
+
+/** Google Street View: an embed when GOOGLE_MAPS_EMBED_KEY is set, and always a link that opens it */
+function street_view(float $lat, float $lng): string
+{
+    $open = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' . $lat . ',' . $lng;
+    $key = getenv('GOOGLE_MAPS_EMBED_KEY') ?: '';
+    $embed = $key ? '<iframe class="street-view" title="Street View of the flat" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="'
+        . e('https://www.google.com/maps/embed/v1/streetview?key=' . rawurlencode($key) . '&location=' . $lat . ',' . $lng . '&fov=80') . '"></iframe>' : '';
+    return '<div class="street-view-box"><h3 class="h-small">Street View</h3>' . $embed
+        . '<a class="btn btn-sm" href="' . e($open) . '" target="_blank" rel="noopener">Open in Google Street View</a>'
+        . '<span class="muted small"> Street-level imagery may not be available on every lane.</span></div>';
+}
