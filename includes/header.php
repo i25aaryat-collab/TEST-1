@@ -92,14 +92,15 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
     <div class="glow"></div>
     <button type="button" role="switch" aria-checked="true" aria-label="Light mode">Switch light or dark mode</button>
     <svg viewBox="0 0 96 170" aria-hidden="true">
-        <line x1="48" y1="0" x2="48" y2="30" stroke="var(--muted)" stroke-width="1.5"/>
+        <rect class="mount" x="40" y="-1" width="16" height="5" rx="2" fill="var(--navy)" opacity=".85"/>
+        <line class="wire" x1="48" y1="3" x2="48" y2="30" stroke="var(--muted)" stroke-width="1.5"/>
         <path d="M40 30h16l20 26q1 3-2 3H22q-3 0-2-3Z" fill="var(--navy)"/>
         <path class="bulb" d="M40 59a8 7 0 0 0 16 0Z" fill="#FCD34D"/>
         <path class="cord" d="" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/>
         <path class="hit grab" d="" fill="none" stroke="transparent" stroke-width="20" style="pointer-events:stroke"/>
         <g class="bead grab"><circle r="14" fill="transparent"/><rect x="-4" y="1" width="8" height="15" rx="4" fill="var(--navy)"/></g>
     </svg>
-    <span class="hint">pull for dark</span>
+    <span class="hint" aria-hidden="true"></span>
 </div>
 <main class="site-main" id="main" tabindex="-1">
 <?php if ($flash): ?>

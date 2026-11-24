@@ -1183,3 +1183,13 @@ html:not([data-theme="dark"]) .fyp-stage {
 .listing-hero .photo-note { z-index: 2; }
 .listing-map { height: 280px; }
 .flat-pin { display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; background: var(--coral); border: 3px solid #fff; transform: translate(-50%, -100%) rotate(-45deg); box-shadow: 0 3px 8px rgba(0,0,0,.3); }
+
+/* Sticker packs: only the chosen pack shows (display:grid was overriding [hidden]) */
+.pack-grid[hidden] { display: none !important; }
+.pack-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); padding: 4px; overflow-x: hidden; }
+.pack-grid button { min-width: 0; }
+
+/* Lamp hangs from the header: show its wire again (with a small ceiling mount) */
+.lamp svg line.wire { display: inline; }
+.lamp .hint::after { content: "pull for dark"; }
+[data-theme="dark"] .lamp .hint::after { content: "pull for light"; }
