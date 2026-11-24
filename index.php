@@ -85,8 +85,8 @@ function clip(string $id, string $class = ''): string
         <div class="fyp-veil" aria-hidden="true"></div>
         <div class="fyp-room">
             <div class="fyp-shot">
-                <?php foreach (['room.jpg' => 'Flatmates hanging out in their living room', 'room2.jpg' => 'Friends sharing popcorn on the sofa', 'room3.jpg' => 'A sleepover under paper bunting', 'room4.jpg' => 'Friends talking around a coffee table', 'room5.jpg' => 'Flatmates laughing on the living-room floor', 'room6.jpg' => 'Late-night chai and giggles on the bed'] as $i => $alt): ?>
-                    <img class="fyp-slide<?= $i === 'room.jpg' ? ' on' : '' ?>" src="<?= e(url('media/story/' . $i)) ?>" alt="<?= e($alt) ?>" loading="lazy" decoding="async">
+                <?php foreach (['room2.jpg' => 'Friends sharing popcorn on the sofa', 'room3.jpg' => 'A sleepover under paper bunting', 'room4.jpg' => 'Friends talking around a coffee table', 'room5.jpg' => 'Flatmates laughing on the living-room floor', 'room6.jpg' => 'Late-night chai and giggles on the bed'] as $i => $alt): ?>
+                    <img class="fyp-slide<?= $i === 'room2.jpg' ? ' on' : '' ?>" src="<?= e(url('media/story/' . $i)) ?>" alt="<?= e($alt) ?>" loading="lazy" decoding="async">
                 <?php endforeach; ?>
                 <div class="fyp-scrim"></div>
             </div>
