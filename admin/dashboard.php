@@ -5,7 +5,9 @@
  * Admin only. Shows:
  *   - counts of users, profiles, swipes, matches and messages
  *   - a table of every user, with search (name or email), a role filter,
- *     sorting (name or join date, either direction) and a Delete button
+ *     sorting (name or join date, either direction), Edit and Delete buttons
+ *   - "Add a user" (admin/user_form.php); profiles and properties are edited
+ *     from each user's page (admin/profile_edit.php, listings/edit.php)
  * ========================================================================== */
 
 require_once __DIR__ . '/../config/db.php';
@@ -79,6 +81,10 @@ require __DIR__ . '/../includes/header.php';
             <h1>Admin dashboard</h1>
             <p class="muted">Everyone on RoomieMatch, at a glance.</p>
         </div>
+        <div class="btn-row">
+            <a class="btn" href="<?= e(url('admin/listings.php')) ?>">Properties</a>
+            <a class="btn btn-primary" href="<?= e(url('admin/user_form.php')) ?>">Add a user</a>
+        </div>
     </div>
 
     <div class="stat-grid">
@@ -87,7 +93,7 @@ require __DIR__ . '/../includes/header.php';
         <div class="card stat"><div class="num"><?= (int) $stats['swipes'] ?></div><div class="label">Swipes</div></div>
         <div class="card stat"><div class="num"><?= (int) $stats['matches'] ?></div><div class="label">Matches</div></div>
         <div class="card stat"><div class="num"><?= (int) $stats['messages'] ?></div><div class="label">Messages</div></div>
-        <div class="card stat"><div class="num"><?= (int) $stats['listings'] ?></div><div class="label">Listings</div></div>
+        <a class="card stat stat-link" href="<?= e(url('admin/listings.php')) ?>"><div class="num"><?= (int) $stats['listings'] ?></div><div class="label">Properties →</div></a>
         <a class="card stat stat-link" href="<?= e(url('admin/reports.php')) ?>"><div class="num"><?= (int) $stats['open_reports'] ?></div><div class="label">Open reports →</div></a>
     </div>
 
@@ -153,7 +159,8 @@ require __DIR__ . '/../includes/header.php';
                                 <td><?= $u['city'] ? e($u['city']) : '<span class="muted">No profile</span>' ?></td>
                                 <td><?= (int) $u['match_count'] ?></td>
                                 <td><?= e(nice_date($u['created_at'])) ?></td>
-                                <td>
+                                <td><div class="row-actions">
+                                    <a class="btn btn-sm" href="<?= e(url('admin/user_form.php?id=' . (int) $u['id'])) ?>">Edit</a>
                                     <?php if ($u['role'] === 'user'): ?>
                                         <form method="post" action="<?= e(url('admin/delete_user.php')) ?>"
                                               data-confirm="Delete <?= e($u['name']) ?>? Their profile, swipes, matches and messages will be removed permanently."
@@ -165,7 +172,7 @@ require __DIR__ . '/../includes/header.php';
                                     <?php else: ?>
                                         <span class="muted small">Protected</span>
                                     <?php endif; ?>
-                                </td>
+                                </div></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

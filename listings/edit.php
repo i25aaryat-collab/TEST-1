@@ -5,6 +5,7 @@
  * CREATE and UPDATE a room listing.
  *   edit.php        -> post a new room
  *   edit.php?id=3   -> edit your own listing (only the owner can)
+ * Admins can add a room for any user (choosing the owner) and edit any listing.
  * Validated in JavaScript and again in PHP (validate_listing).
  * ========================================================================== */
 
@@ -13,14 +14,15 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/listing_helpers.php';
 require_once __DIR__ . '/../profile/profile_helpers.php';   // photo upload helpers
 
-require_profile();      // owners need a profile so seekers can see who they'd live with
+$admin = is_admin();
+if ($admin) require_admin(); else require_profile();    // owners need a profile so seekers can see who they'd live with
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $listing = null;
 if ($id) {
-    // Owner check: the row must belong to the logged-in user
-    $stmt = $pdo->prepare('SELECT * FROM listings WHERE id = ? AND user_id = ?');
-    $stmt->execute([$id, $_SESSION['user_id']]);
+    // Owner check: the row must belong to the logged-in user (an admin may edit any)
+    $stmt = $pdo->prepare('SELECT * FROM listings WHERE id = ? AND (user_id = ? OR ?)');
+    $stmt->execute([$id, $_SESSION['user_id'], $admin ? 1 : 0]);
     $listing = $stmt->fetch();
     if (!$listing) {
         set_flash('error', 'You can only edit your own listings.');
@@ -32,14 +34,19 @@ $values = $listing ? array_intersect_key($listing, listing_defaults()) : listing
 $values['rent'] = (string) $values['rent'];
 $errors = [];
 
+// Whose room it is: the logged-in user, or (admin) any user picked in the form
+$ownerId = $listing ? (int) $listing['user_id'] : ($admin ? (int) ($_POST['owner_id'] ?? $_GET['owner'] ?? 0) : (int) $_SESSION['user_id']);
+$owners = $admin ? $pdo->query("SELECT u.id, u.name, u.email FROM users u JOIN profiles p ON p.user_id = u.id WHERE u.role = 'user' ORDER BY u.name")->fetchAll() : [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     check_csrf();
     $values = read_listing_input($_POST);
     $errors = validate_listing($values);
+    if ($admin && !in_array($ownerId, array_map('intval', array_column($owners, 'id')), true)) $errors['owner_id'] = 'Pick whose room this is (they need a profile).';
 
     $photo = $listing['photo'] ?? null;
     if (!$errors) {
-        $new = save_uploaded_photo($_FILES['photo'] ?? null, $_SESSION['user_id'], $errors);
+        $new = save_uploaded_photo($_FILES['photo'] ?? null, $ownerId, $errors);
         if ($new) { delete_photo_file($photo); $photo = $new; }
     }
 
@@ -50,21 +57,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $status = ($_POST['status'] ?? 'open') === 'closed' ? 'closed' : 'open';
             $pdo->prepare('UPDATE listings SET title = ?, city = ?, area = ?, rent = ?, room_type = ?, furnished = ?,
                            available_from = ?, description = ?, photo = ?, status = ? WHERE id = ? AND user_id = ?')
-                ->execute(array_merge($fields, [$status, $id, $_SESSION['user_id']]));
+                ->execute(array_merge($fields, [$status, $id, $ownerId]));
             set_flash('success', 'Listing updated.');
         } else {
             $pdo->prepare('INSERT INTO listings (title, city, area, rent, room_type, furnished, available_from, description, photo, user_id)
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                ->execute(array_merge($fields, [$_SESSION['user_id']]));
+                ->execute(array_merge($fields, [$ownerId]));
             $id = (int) $pdo->lastInsertId();
-            set_flash('success', 'Your room is listed!');
+            set_flash('success', $admin ? 'Property added.' : 'Your room is listed!');
         }
         // Map pin from the location picker (exact, chosen by the poster)
         $lat = $_POST['loc_lat'] ?? ''; $lng = $_POST['loc_lng'] ?? '';
         if (is_numeric($lat) && is_numeric($lng) && abs((float) $lat) <= 90 && abs((float) $lng) <= 180) {
-            $pdo->prepare('UPDATE listings SET lat = ?, lng = ?, loc_approx = 0 WHERE id = ? AND user_id = ?')->execute([(float) $lat, (float) $lng, $id, $_SESSION['user_id']]);
+            $pdo->prepare('UPDATE listings SET lat = ?, lng = ?, loc_approx = 0 WHERE id = ? AND user_id = ?')->execute([(float) $lat, (float) $lng, $id, $ownerId]);
         }
-        redirect('listings/view.php?id=' . $id);
+        redirect($admin ? 'admin/listings.php' : 'listings/view.php?id=' . $id);
     }
 }
 
@@ -79,12 +86,27 @@ require __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container container-narrow">
-    <div class="page-head"><div><h1><?= $listing ? 'Edit your listing' : 'Post a room' ?></h1>
+    <div class="page-head"><div><h1><?= $admin ? ($listing ? 'Edit property' : 'Add a property') : ($listing ? 'Edit your listing' : 'Post a room') ?></h1>
         <p class="muted">Tell flat-seekers what the room is like. Be specific: it gets you better messages.</p></div></div>
 
     <form id="listing-form" class="card form-card form-grid" method="post" action="" enctype="multipart/form-data" novalidate>
         <?= csrf_field() ?>
         <input type="hidden" name="MAX_FILE_SIZE" value="<?= MAX_PHOTO_BYTES ?>">
+        <?php if ($admin): ?>
+            <div class="form-group">
+                <label for="owner_id">Owner</label>
+                <?php if ($listing): ?>
+                    <?php foreach ($owners as $o) if ((int) $o['id'] === $ownerId) echo '<p><strong>' . e($o['name']) . '</strong> <span class="muted small">' . e($o['email']) . '</span></p>'; ?>
+                <?php else: ?>
+                    <select id="owner_id" name="owner_id" class="<?= linv($errors, 'owner_id') ?>" required>
+                        <option value="">Choose whose room this is…</option>
+                        <?php foreach ($owners as $o): ?><option value="<?= (int) $o['id'] ?>" <?= $ownerId === (int) $o['id'] ? 'selected' : '' ?>><?= e($o['name']) ?> (<?= e($o['email']) ?>)</option><?php endforeach; ?>
+                    </select>
+                    <div class="hint">Every flat belongs to a person. Only users with a profile are listed.</div>
+                <?php endif; ?>
+                <?= lerr($errors, 'owner_id') ?>
+            </div>
+        <?php endif; ?>
         <div class="form-group">
             <label for="title">Title</label>
             <input type="text" id="title" name="title" maxlength="100" value="<?= e($values['title']) ?>" class="<?= linv($errors, 'title') ?>" placeholder="e.g. Sunny room in a 2BHK near Vijay Nagar">
@@ -134,7 +156,7 @@ require __DIR__ . '/../includes/header.php';
         <?php endif; ?>
         <div class="form-actions">
             <a class="btn" href="<?= e(url($listing ? 'listings/view.php?id=' . $id : 'listings/index.php')) ?>">Cancel</a>
-            <button type="submit" class="btn btn-primary"><?= $listing ? 'Save changes' : 'Post room' ?></button>
+            <button type="submit" class="btn btn-primary"><?= $listing ? 'Save changes' : ($admin ? 'Add property' : 'Post room') ?></button>
         </div>
     </form>
 

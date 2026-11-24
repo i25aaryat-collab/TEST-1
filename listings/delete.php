@@ -25,4 +25,4 @@ if (!$listing || ((int) $listing['user_id'] !== (int) $_SESSION['user_id'] && !i
     delete_photo_file($listing['photo']);
     set_flash('success', 'Listing deleted.');
 }
-redirect(is_admin() ? 'admin/reports.php' : 'listings/index.php');
+redirect(is_admin() ? (($_POST['back'] ?? '') === 'reports' ? 'admin/reports.php' : 'admin/listings.php') : 'listings/index.php');
