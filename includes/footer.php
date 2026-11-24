@@ -11,7 +11,7 @@
 
 <footer class="site-footer">
     <div class="container footer-inner">
-        <p class="muted">© <?= date('Y') ?> RoomieMatch. All rights reserved.</p>
+        <p class="muted">© <?= date('Y') ?> RoomieMatch. All rights reserved. · <a href="<?= e(url('privacy.php')) ?>">Privacy policy</a></p>
     </div>
 </footer>
 
@@ -58,5 +58,27 @@
 <?php endif; ?>
 <?= $extraScripts ?? '' ?>
 <script src="<?= e(url('js/pullcord.js')) ?>?v=1"></script>
+<script>
+// Score (i): open its explanation in one pop-up on <body>, so no card (with transforms/overflow) can clip or trap it
+(function () {
+    let box = null;
+    function close() { if (box) { box.remove(); box = null; document.body.style.overflow = ''; } }
+    document.addEventListener('click', function (e) {
+        const sum = e.target.closest('details.score-why > summary');
+        if (!sum) return;
+        e.preventDefault();
+        close();
+        const panel = sum.parentElement.querySelector('.why-panel');
+        box = document.createElement('div');
+        box.className = 'why-modal';
+        box.innerHTML = '<div class="why-modal-panel" role="dialog" aria-modal="true" aria-label="How this score is worked out">' + panel.innerHTML + '</div>';
+        box.addEventListener('click', function (ev) { if (ev.target === box || ev.target.closest('.why-foot button')) close(); });
+        document.body.appendChild(box);
+        document.body.style.overflow = 'hidden';
+        const btn = box.querySelector('.why-foot button'); if (btn) { btn.removeAttribute('onclick'); btn.focus(); }
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+})();
+</script>
 </body>
 </html>

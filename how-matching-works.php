@@ -17,7 +17,7 @@ require __DIR__ . '/includes/header.php';
         <p class="muted">Your score with someone is a conversation starter, not a promise that you'll live well together.</p>
 
         <h2>1. You both answer the same short test</h2>
-        <p><?= count(test_questions()) ?> continuous sliders across five areas. Each end has a clear label, and neither end is the "right" answer.</p>
+        <p><?= count(test_questions()) ?> questions across five areas, each answered on a 1–5 scale. Each end has a clear label, and neither end is the "right" answer.</p>
         <ul class="how-list">
             <?php foreach (TEST_SECTIONS as $s => $qs): ?><li><strong><?= e($s) ?></strong>: <?= e(implode(', ', array_map(fn($q) => rtrim(lcfirst($q[0]), '?'), array_values($qs)))) ?>.</li><?php endforeach; ?>
         </ul>
@@ -26,7 +26,7 @@ require __DIR__ . '/includes/header.php';
         <div class="how-table">
             <div><b>Same point</b><span>100</span></div><div><b>25 points apart</b><span>75</span></div><div><b>50 points apart</b><span>50</span></div><div><b>75 points apart</b><span>25</span></div><div><b>Opposite ends</b><span>0</span></div>
         </div>
-        <p>For each question you both answered, fit is <strong>100 − the distance between your slider values</strong>. We average those fits equally. Questions either person skipped are left out. We show a score after at least <?= MIN_SHARED ?> shared answers.</p>
+        <p>For each question you both answered, fit is <strong>100 − 25 × the number of steps between your answers</strong>: the same answer is 100, one step apart 75, two 50, three 25, opposite ends 0. We average those fits equally. Questions either person skipped are left out. We show a score after at least <?= MIN_SHARED ?> shared answers.</p>
 
         <h2>3. Skipped answers never count against you</h2>
         <p>Each section and question can be skipped. We average only the answers you <em>both</em> gave; skipped answers never count as mismatches. Every score says how many shared answers it uses.</p>

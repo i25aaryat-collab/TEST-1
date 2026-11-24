@@ -4,8 +4,8 @@
  * --------------------------------------------------------------------------
  * The compatibility score, from the RoomieMatch test (profile/test.php).
  *
- *  - The twenty questions use 0..100 sliders stored in profiles.answers JSON.
- *  - Fit per question = 100 - the distance between two answers.
+ *  - Every question is a 1..5 scale, stored in profiles.answers JSON.
+ *  - Fit per question = 100 - 25 x (steps apart): same 100, 1 apart 75, 2 apart 50, 3 apart 25, opposite ends 0.
  *  - Every question has equal weight. A skipped answer is excluded.
  *  - Fewer than MIN_SHARED shared answers -> no score ("Not enough answers yet").
  *  - Budget and city are Discover filters, not part of the score.
@@ -57,31 +57,27 @@ function test_questions(): array
     return $all;
 }
 
-/** Stored answers are normalized to 0..100. Older 1..5 scores are expanded to that scale. */
+/** Answers as 1..5 steps. (Answers saved during the short-lived 0..100 slider version are rounded to the nearest step.) */
 function test_answers(array $profile): array
 {
     $payload = json_decode((string) ($profile['answers'] ?? ''), true);
     if (!is_array($payload)) return [];
-    $isCurrentScale = (int) ($payload['_scale'] ?? 0) === 100;
+    $fromHundred = (int) ($payload['_scale'] ?? 0) === 100;
     unset($payload['_scale']);
 
     $answers = [];
     foreach (test_questions() as $key => $_question) {
         $value = $payload[$key] ?? null;
         if (!is_numeric($value)) continue;
-        $value = (int) $value;
-        if ($isCurrentScale && $value >= 0 && $value <= 100) {
-            $answers[$key] = $value;
-        } elseif (!$isCurrentScale && $value >= 1 && $value <= 5) {
-            $answers[$key] = ($value - 1) * 25;
-        }
+        $value = $fromHundred ? (int) round(max(0, min(100, (float) $value)) / 25) + 1 : (int) $value;
+        if ($value >= 1 && $value <= 5) $answers[$key] = $value;
     }
     return $answers;
 }
 
 /**
- * Each shared answer has equal weight: fit = 100 - the absolute distance
- * between two 0..100 slider values. Skips are excluded from both numerator
+ * Each shared answer has equal weight: fit = 100 - 25 x the number of steps
+ * between two 1..5 answers. Skips are excluded from both numerator
  * and denominator, and fewer than five shared answers yields no score.
  */
 function compatibility_result(array $a, array $b): array
@@ -91,22 +87,38 @@ function compatibility_result(array $a, array $b): array
     $sum = 0;
     $shared = 0;
     $sections = [];
+    $items = [];                                   // every shared question, for the "how is this worked out" panel
     $same = $largestDifference = null;
 
     foreach (test_questions() as $key => $question) {
         if (!isset($answersA[$key], $answersB[$key])) continue;
-        $gap = abs($answersA[$key] - $answersB[$key]);
+        $steps = abs($answersA[$key] - $answersB[$key]);
+        $gap = $steps * 25;                                      // 0, 25, 50, 75 or 100
         $fit = 100 - $gap;
         $sum += $fit;
         $shared++;
         $sections[$question['section']][] = $fit;
-        if ($gap <= 5 && !$same) $same = 'You both chose similar answers for: ' . lcfirst($question[0]);
-        if ($gap >= 25 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
+        $items[] = ['q' => $question[0], 'you' => $answersA[$key], 'them' => $answersB[$key], 'fit' => $fit];
+        if ($steps === 0 && !$same) $same = 'You both chose similar answers for: ' . lcfirst($question[0]);
+        if ($steps >= 2 && (!$largestDifference || $gap > $largestDifference[1])) $largestDifference = [$question[0], $gap];
+    }
+
+    // How long each wants to stay counts like one more question (same 1..5 scale and formula)
+    if (!empty($a['stay']) && !empty($b['stay'])) {
+        $steps = abs((int) $a['stay'] - (int) $b['stay']);
+        $fit = 100 - 25 * $steps;
+        $sum += $fit; $shared++;
+        $sections['How long you stay'][] = $fit;
+        $items[] = ['q' => 'How long you want to live together', 'you' => (int) $a['stay'], 'them' => (int) $b['stay'], 'fit' => $fit,
+                    'you_label' => stay_label($a), 'them_label' => stay_label($b)];
+        if ($steps >= 2 && (!$largestDifference || 25 * $steps > $largestDifference[1])) $largestDifference = ['How long you each plan to stay', 25 * $steps];
     }
 
     return [
         'score' => $shared >= MIN_SHARED ? (int) round($sum / $shared) : null,
         'shared' => $shared,
+        'sum' => $sum,
+        'items' => $items,
         'sections' => array_map(fn($fits) => array_sum($fits) / count($fits), $sections),
         'same' => $same,
         'discuss' => $largestDifference ? 'Worth a chat: ' . lcfirst($largestDifference[0]) : null,
@@ -151,10 +163,33 @@ function score_ring(?int $score): string
          . '<span>' . ($score === null ? '–' : $score . '<small>%</small>') . '</span></div>';
 }
 
-/** "82% · based on 12 shared answers ⓘ" (or "Not enough answers yet ⓘ"), linking to How matching works */
+/** "82% · based on 12 shared answers" + an (i) that opens how this exact score was worked out */
 function score_line(array $r): string
 {
-    $info = '<a class="info-i" href="' . e(url('how-matching-works.php')) . '" title="How matching works" aria-label="How matching works">ⓘ</a>';
-    if ($r['score'] === null) return '<p class="score-line muted small">Not enough answers yet (' . (int) $r['shared'] . ' shared) ' . $info . '</p>';
-    return '<p class="score-line small"><strong>' . $r['score'] . '%</strong> · based on ' . $r['shared'] . ' shared answer' . ($r['shared'] === 1 ? '' : 's') . ' ' . $info . '</p>';
+    if ($r['score'] === null) return '<div class="score-line muted small">Not enough answers yet (' . (int) $r['shared'] . ' shared) ' . score_explain($r) . '</div>';
+    return '<div class="score-line small"><strong>' . $r['score'] . '%</strong> · based on ' . $r['shared'] . ' shared answer' . ($r['shared'] === 1 ? '' : 's') . ' ' . score_explain($r) . '</div>';
+}
+
+/**
+ * The (i) button: opens a small panel showing the formula and this pair's own numbers.
+ *   score = average over shared questions of (100 - 25 x |your answer - their answer|), answers on 1..5
+ */
+function score_explain(array $r): string
+{
+    $rows = '';
+    foreach ($r['items'] ?? [] as $i) {
+        $rows .= '<tr><td>' . e($i['q']) . '</td><td>' . (isset($i['you_label']) ? e($i['you_label']) . ' (' . (int) $i['you'] . ')' : (int) $i['you']) . '</td><td>' . (isset($i['them_label']) ? e($i['them_label']) . ' (' . (int) $i['them'] . ')' : (int) $i['them']) . '</td><td>100 − 25 × ' . abs((int) $i['you'] - (int) $i['them']) . ' = <strong>' . (int) $i['fit'] . '</strong></td></tr>';
+    }
+    $n = (int) $r['shared'];
+    $result = $r['score'] === null
+        ? '<p class="why-result">Only ' . $n . ' shared answer' . ($n === 1 ? '' : 's') . '. A score needs at least ' . MIN_SHARED . ', so none is shown yet.</p>'
+        : '<p class="why-result">' . (count($r['items'] ?? []) <= 12 ? implode(' + ', array_map(fn($i) => (int) $i['fit'], $r['items'] ?? [])) . ' = ' : 'Fits add up to ')
+          . (int) ($r['sum'] ?? 0) . ', ÷ ' . $n . ' answers = <strong>' . $r['score'] . '%</strong></p>';
+    return '<details class="score-why"><summary aria-label="How this score is worked out" title="How this score is worked out">i</summary><div class="why-panel">'
+        . '<p class="why-formula"><strong>Score</strong> = average of <code>100 − 25 × |your answer − their answer|</code> over the questions you both answered</p>'
+        . '<p class="muted small">Every answer is on a 1–5 scale. Same answer = 100, one step apart = 75, two = 50, three = 25, opposite ends = 0. Skipped questions don\'t count. At least ' . MIN_SHARED . ' shared answers are needed.</p>'
+        . ($rows ? '<div class="why-table"><table><thead><tr><th>Question</th><th>You</th><th>Them</th><th>Fit</th></tr></thead><tbody>' . $rows . '</tbody></table></div>' : '')
+        . $result
+        . '<div class="why-foot"><a class="small" href="' . e(url('how-matching-works.php')) . '">More about matching</a>'
+        . '<button type="button" class="btn btn-sm" onclick="this.closest(\'details\').open=false">Close</button></div></div></details>';
 }

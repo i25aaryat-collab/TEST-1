@@ -1,7 +1,7 @@
 <?php
 /**
  * profile/test.php  —  Owner: M3 (Profiles)
- * Twenty continuous sliders in five sections. Each question and each section
+ * Twenty 1-5 scales in five sections. Each question and each section
  * can be skipped; skipped answers stay out of the score.
  * Answers are stored as JSON in profiles.answers. Scoring: swipe/compatibility.php.
  * Buttons: "Save and finish later" (profile), "See matches with what I've
@@ -24,15 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach (test_questions() as $key => $question) {
         $value = (string) ($submitted[$key] ?? '');
         if ($value === '') continue;                    // skipped
-        if (!ctype_digit($value) || (int) $value < 0 || (int) $value > 100) {
-            $errors['q_' . $key] = 'Choose a point on the slider, or skip the question.';
+        if (!ctype_digit($value) || (int) $value < 1 || (int) $value > 5) {
+            $errors['q_' . $key] = 'Pick a point from 1 to 5, or skip the question.';
             continue;
         }
         $answers[$key] = (int) $value;
     }
 
     if (!$errors) {
-        $storedAnswers = ['_scale' => 100] + $answers;
+        $storedAnswers = $answers;                      // 1..5 per question
         $pdo->prepare('UPDATE profiles SET answers = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?')
             ->execute([json_encode($storedAnswers), $userId]);
         if ($go === 'later') { set_flash('success', 'Saved. You can finish the test any time from your profile.'); redirect('profile/view_profile.php'); }
@@ -49,7 +49,7 @@ require __DIR__ . '/../includes/header.php';
     <div class="page-head">
         <div>
             <h1>Your compatibility test</h1>
-            <p class="muted"><?= $total ?> continuous sliders in five short sections. Skip any question or section; only answers you both give are compared.
+            <p class="muted"><?= $total ?> questions in five short sections, each on a 1–5 scale. Skip any question or section; only answers you both give are compared.
                 <a href="<?= e(url('how-matching-works.php')) ?>" class="info-i" title="How matching works">ⓘ How it's scored</a></p>
         </div>
     </div>
@@ -65,7 +65,7 @@ require __DIR__ . '/../includes/header.php';
         <?php $n = 0; $step = 0; foreach (TEST_SECTIONS as $section => $qs): $step++; ?>
             <section class="card test-section" data-step="<?= $step ?>">
                 <div class="sec-head">
-                    <div><h2><?= e($section) ?></h2><p class="muted small">Drag or tap the slider. Every question is optional.</p></div>
+                    <div><h2><?= e($section) ?></h2><p class="muted small">Pick 1 to 5. Every question is optional.</p></div>
                     <button type="button" class="link-btn small tq-skip-section">Skip this section</button>
                 </div>
                 <?php foreach ($qs as $k => [$ask, $low, $high, $kind]): $n++; $val = $answers[$k] ?? null; $optional = in_array($k, ['culture', 'religion_diff'], true); ?>
@@ -74,11 +74,11 @@ require __DIR__ . '/../includes/header.php';
                         <input type="hidden" name="q[<?= e($k) ?>]" value="<?= $val === null ? '' : (int) $val ?>">
                         <div class="tq-scale">
                             <span class="tq-end"><?= e($low) ?></span>
-                            <input type="range" id="q-<?= e($k) ?>" min="0" max="100" step="1" value="<?= $val === null ? 50 : (int) $val ?>" aria-describedby="v-<?= e($k) ?>">
+                            <div class="tq-track"><input type="range" id="q-<?= e($k) ?>" min="1" max="5" step="1" value="<?= $val === null ? 3 : (int) $val ?>" aria-describedby="v-<?= e($k) ?>"><span class="tq-ticks" aria-hidden="true"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i></span></div>
                             <span class="tq-end"><?= e($high) ?></span>
                         </div>
                         <div class="tq-foot">
-                            <span class="tq-val" id="v-<?= e($k) ?>"><?= $val === null ? 'Not answered' : 'Your answer: ' . (int) $val . '%' ?></span>
+                            <span class="tq-val" id="v-<?= e($k) ?>"><?= $val === null ? 'Not answered' : 'Your answer: ' . (int) $val . ' of 5' ?></span>
                             <button type="button" class="link-btn small tq-skip">Skip question</button>
                         </div>
                     </div>
@@ -112,7 +112,7 @@ $extraScripts = <<<'HTML'
         return Array.from(sec.querySelectorAll('.tq input[type=hidden]')).filter(function (input) { return input.value !== ''; }).length;
     }
     function timeText(startHour, spanHours, value) {
-        const minutes = Math.round(startHour * 60 + spanHours * 60 * Number(value) / 100) % 1440;
+        const minutes = Math.round((startHour * 60 + spanHours * 60 * (Number(value) - 1) / 4) / 30) * 30 % 1440;   // snap to :00 / :30
         const hour24 = Math.floor(minutes / 60), minute = minutes % 60;
         const period = hour24 >= 12 ? 'pm' : 'am';
         const hour12 = hour24 % 12 || 12;
@@ -120,10 +120,10 @@ $extraScripts = <<<'HTML'
     }
     function labelFor(q, value) {
         const kind = q.dataset.kind, number = Number(value);
-        if (kind === 'bedtime') return timeText(20, 7, number);
-        if (kind === 'waketime') return timeText(5, 6, number);
-        if (kind === 'temperature') return (18 + 12 * number / 100).toFixed(1) + '°C';
-        return number + '% along the scale';
+        if (kind === 'bedtime') return number + ' of 5 · around ' + timeText(20, 7, number) + (number === 5 ? ' or later' : '');
+        if (kind === 'waketime') return number + ' of 5 · around ' + timeText(5, 6, number) + (number === 5 ? ' or later' : '');
+        if (kind === 'temperature') return (18 + 3 * (number - 1)) + '°C';
+        return number + ' of 5';
     }
     function update() {
         let done = 0, total = 0;
@@ -145,7 +145,7 @@ $extraScripts = <<<'HTML'
     }
     function skipQuestion(q) {
         const hidden = q.querySelector('input[type=hidden]'), range = q.querySelector('input[type=range]');
-        hidden.value = ''; range.value = 50; q.classList.add('is-unset');
+        hidden.value = ''; range.value = 3; q.classList.add('is-unset');
         const out = q.querySelector('.tq-val'); if (out) out.textContent = 'Skipped';
         q.closest('.test-section').classList.remove('section-skipped');
         const skipButton = q.closest('.test-section').querySelector('.tq-skip-section');
@@ -155,7 +155,7 @@ $extraScripts = <<<'HTML'
     function skipSection(sec) {
         sec.querySelectorAll('.tq').forEach(function (q) {
             const hidden = q.querySelector('input[type=hidden]'), range = q.querySelector('input[type=range]');
-            hidden.value = ''; range.value = 50; q.classList.add('is-unset');
+            hidden.value = ''; range.value = 3; q.classList.add('is-unset');
             const out = q.querySelector('.tq-val'); if (out) out.textContent = 'Skipped';
         });
         sec.classList.add('section-skipped');

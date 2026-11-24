@@ -141,6 +141,7 @@ function field_class(array $errors, string $name): string { return isset($errors
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block btn-lg">Create account</button>
+                <p class="muted small consent-line">By creating an account you agree to our <a href="<?= e(url('privacy.php')) ?>">privacy policy</a>.</p>
             </form>
         </div>
     </div>
