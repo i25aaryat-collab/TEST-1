@@ -126,7 +126,7 @@ function clip(string $id, string $class = ''): string
         <div class="feature-demo demo-rank">
             <?php foreach ([['c03', 'Meher, 23', 94, 'Bedtimes fit'], ['c11', 'Lina, 27', 81, 'Tidiness fits'], ['c06', 'Aman, 26', 58, 'Budgets differ']] as $k => [$av, $who, $sc, $why]): ?>
                 <div class="card demo-row" style="--k: <?= $k ?>">
-                    <img class="avatar" src="<?= e(url('css/avatars/' . $av . '.svg')) ?>" alt="">
+                    <img class="avatar" src="<?= e(avatar_src($av)) ?>" alt="">
                     <div class="grow"><strong><?= $who ?></strong><div class="muted small"><?= $why ?></div></div>
                     <?= score_ring($sc) ?>
                 </div>
@@ -141,7 +141,7 @@ function clip(string $id, string $class = ''): string
             <p>Messages arrive within seconds, an unread count lights up like on Instagram, and you can send emojis, stickers and GIFs. Anyone being rude can be reported in one tap.</p>
         </div>
         <div class="feature-demo demo-chat card">
-            <div class="demo-chat-head"><img class="avatar" src="<?= e(url('css/avatars/c03.svg')) ?>" alt=""> <strong>Meher</strong> <span class="nav-badge static">2</span></div>
+            <div class="demo-chat-head"><img class="avatar" src="<?= e(avatar_src('p06')) ?>" alt=""> <strong>Meher</strong> <span class="nav-badge static">2</span></div>
             <div class="demo-bubble">Hi! Saw you're 94% 😄</div>
             <div class="demo-bubble mine">Haha yes! Flat hunting this weekend?</div>
             <img class="demo-sticker" src="<?= e(url('css/stickers/c03.svg')) ?>" alt="">

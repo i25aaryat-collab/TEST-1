@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------------
  * The 12 RoomieMatch characters, drawn as SVG in code (no image files).
  *   - On the landing page their eyes and heads follow the mouse cursor.
- *   - The same drawings are saved as avatar icons (css/avatars/c01.svg ...)
+ *   - (Profile avatars are separate illustrations: css/avatars/p01.webp ...)
  *     that users can pick instead of uploading a photo.
  *
  * rmCharacterSVG(character, look) returns an SVG string.

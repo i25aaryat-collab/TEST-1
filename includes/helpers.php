@@ -43,8 +43,25 @@ const SLEEP_FLEX_OPTIONS = [
     4 => "Doesn't matter",
 ];
 
-/** The 12 character icons users can pick instead of a photo (css/avatars/c01.svg ...) */
-const AVATAR_IDS = ['c01', 'c02', 'c03', 'c04', 'c05', 'c06', 'c07', 'c08', 'c09', 'c10', 'c11', 'c12'];
+/** The 9 illustrated avatars users can pick instead of a photo (css/avatars/p01.webp ...) */
+const AVATAR_IDS = ['p01', 'p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09'];
+
+/** The 12 character stickers in chat (css/stickers/c01.svg ...); no longer used as avatars */
+const CHARACTER_STICKER_IDS = ['c01', 'c02', 'c03', 'c04', 'c05', 'c06', 'c07', 'c08', 'c09', 'c10', 'c11', 'c12'];
+
+/** An avatar id as it is today: profiles saved with an old icon (c01..c12) get one of the new ones */
+function avatar_id(string $id): string
+{
+    if (in_array($id, AVATAR_IDS, true)) return $id;
+    $n = (int) substr($id, 1);
+    return AVATAR_IDS[$n > 0 ? ($n - 1) % count(AVATAR_IDS) : 0];
+}
+
+/** Image address of an avatar id */
+function avatar_src(string $id): string
+{
+    return url('css/avatars/' . avatar_id($id) . '.webp');
+}
 
 /** The only languages a user may pick */
 const LANGUAGE_OPTIONS = [
@@ -56,7 +73,7 @@ const LANGUAGE_OPTIONS = [
 // Sticker packs: our 12 characters (css/stickers/c01.svg) + Microsoft Fluent 3D
 // emoji (MIT licence, css/stickers/fluent/*.webp)
 const STICKER_PACKS = [
-    'Characters' => AVATAR_IDS,
+    'Characters' => CHARACTER_STICKER_IDS,
     'Flat life'  => ["house", "house_with_garden", "key", "door", "bed", "couch_and_lamp", "broom", "sponge", "bucket", "basket", "shopping_cart", "potted_plant", "pizza", "hot_beverage", "teacup_without_handle", "bubble_tea", "cooking", "money_bag", "alarm_clock", "package", "party_popper", "wrapped_gift", "light_bulb", "soap"],
     'Feelings'   => ["smiling_face_with_hearts", "face_with_tears_of_joy", "grinning_squinting_face", "hugging_face", "thinking_face", "sleeping_face", "partying_face", "pleading_face", "face_with_rolling_eyes", "saluting_face", "melting_face", "star_struck", "nerd_face", "smiling_face_with_sunglasses", "zany_face", "yawning_face", "thumbs_up", "waving_hand", "handshake", "red_heart", "fire", "sparkles", "dog_face", "ghost"],
 ];
@@ -65,7 +82,7 @@ const STICKER_IDS = [...STICKER_PACKS['Characters'], ...STICKER_PACKS['Flat life
 /** Image path for a sticker id */
 function sticker_src(string $id): string
 {
-    return url(in_array($id, AVATAR_IDS, true) ? 'css/stickers/' . $id . '.svg' : 'css/stickers/fluent/' . $id . '.webp');
+    return url(in_array($id, CHARACTER_STICKER_IDS, true) ? 'css/stickers/' . $id . '.svg' : 'css/stickers/fluent/' . $id . '.webp');
 }
 
 /** Quick reactions on chat messages */
@@ -139,7 +156,7 @@ function photo_url(?string $fileName): string
     // A picked character icon is stored as "avatar:c01"
     if ($fileName && str_starts_with($fileName, 'avatar:')) {
         $id = substr($fileName, 7);
-        return url('css/avatars/' . (in_array($id, AVATAR_IDS, true) ? $id : 'c01') . '.svg');
+        return avatar_src($id);
     }
     // An image link (imported listings) is used as it is
     if ($fileName && preg_match('#^https://#', $fileName)) {

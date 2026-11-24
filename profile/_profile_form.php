@@ -83,7 +83,7 @@ $yesNo = ['no' => 'No', 'yes' => 'Yes'];
             <?php foreach (AVATAR_IDS as $id): ?>
                 <label class="avatar-option">
                     <input type="radio" name="avatar" value="<?= e($id) ?>" <?= $values['avatar'] === $id ? 'checked' : '' ?>>
-                    <img src="<?= e(url('css/avatars/' . $id . '.svg')) ?>" alt="Character icon <?= (int) substr($id, 1) ?>" width="64" height="64">
+                    <img src="<?= e(avatar_src($id)) ?>" alt="Avatar <?= (int) substr($id, 1) ?>" width="64" height="64" loading="lazy">
                 </label>
             <?php endforeach; ?>
             <label class="avatar-option avatar-text">
