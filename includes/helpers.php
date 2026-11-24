@@ -1,6 +1,9 @@
 <?php
 /** How long someone wants to live together (profiles.stay). 1..5 so it scores like a test answer. */
 const STAY_OPTIONS = [1 => '1–3 months', 2 => '3–6 months', 3 => '6–12 months', 4 => '1–2 years', 5 => '2+ years'];
+/** How many people someone wants to live with (profiles.flatmates); a household is that many + them */
+const FLATMATE_OPTIONS = [1 => '1 person', 2 => '2 people', 3 => '3 people', 4 => '4 or more'];
+function flatmates_label($p): string { $v = (int) (is_array($p) ? ($p['flatmates'] ?? 0) : $p); return FLATMATE_OPTIONS[$v] ?? ''; }
 function stay_label($p): string { $v = (int) (is_array($p) ? ($p['stay'] ?? 0) : $p); return STAY_OPTIONS[$v] ?? ''; }
 /* ==========================================================================
  * includes/helpers.php  —  Owner: M1 (Lead)

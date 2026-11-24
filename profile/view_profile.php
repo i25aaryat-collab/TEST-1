@@ -89,6 +89,7 @@ require __DIR__ . '/../includes/header.php';
 
         <div class="detail-grid" style="margin-top:20px">
             <div class="detail"><span>Budget</span><?= e(rupees((int) $person['budget_min'])) ?> – <?= e(rupees((int) $person['budget_max'])) ?> / month</div>
+            <?php if (flatmates_label($person) !== ''): ?><div class="detail"><span>Wants to live with</span><?= e(flatmates_label($person)) ?></div><?php endif; ?>
             <?php if (stay_label($person) !== ''): ?><div class="detail"><span>Plans to stay</span><?= e(stay_label($person)) ?></div><?php endif; ?>
             <?php if (!empty($person['college'])): ?><div class="detail"><span>College</span><?= e($person['college']) ?><?= $person['college_status'] === 'incoming' ? ' · incoming' : ($person['college_status'] === 'current' ? ' · current student' : '') ?></div><?php endif; ?>
             <?php $ans = test_answers($person); ?>

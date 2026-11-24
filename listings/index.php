@@ -67,7 +67,7 @@ $groups = array_filter([
 // People (not listings) who have a flat in mind: comparing, shortlisted or chosen
 $people = [];
 $st = $pdo->prepare("SELECT u.id AS uid, u.name, p.* FROM profiles p JOIN users u ON u.id = p.user_id
-                     WHERE u.role = 'user' AND p.flat_stage >= 3 AND (p.flat_area IS NOT NULL OR p.flat_rent IS NOT NULL)" . ($city !== '' ? ' AND p.city = ?' : '') . ($me ? ' AND u.id <> ?' : '') . ' ORDER BY p.flat_stage DESC LIMIT 12');
+                     WHERE u.role = 'user' AND p.looking = 1 AND p.flat_stage >= 3 AND (p.flat_area IS NOT NULL OR p.flat_rent IS NOT NULL)" . ($city !== '' ? ' AND p.city = ?' : '') . ($me ? ' AND u.id <> ?' : '') . ' ORDER BY p.flat_stage DESC LIMIT 12');
 $st->execute(array_values(array_filter([$city !== '' ? $city : null, $me ? (int) $_SESSION['user_id'] : null])));
 foreach ($st->fetchAll() as $p) { $p['result'] = $me ? compatibility_result($me, $p) : null; $people[] = $p; }
 

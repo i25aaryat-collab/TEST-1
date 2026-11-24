@@ -130,11 +130,11 @@ require __DIR__ . '/../includes/header.php';
                 <?php if ($myGroups): ?>
                     <form method="post" action="<?= e(url('groups/action.php')) ?>" class="inline-form"><?= csrf_field() ?>
                         <input type="hidden" name="action" value="add"><input type="hidden" name="from_listing" value="1"><input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
-                        <select name="group_id" aria-label="Shortlist"><?php foreach ($myGroups as $g): ?><option value="<?= (int) $g['id'] ?>"><?= e($g['name']) ?></option><?php endforeach; ?></select>
-                        <button class="btn">Save to shortlist</button>
+                        <select name="group_id" aria-label="Household"><?php foreach ($myGroups as $g): ?><option value="<?= (int) $g['id'] ?>"><?= e($g['name']) ?></option><?php endforeach; ?></select>
+                        <button class="btn">Save to household</button>
                     </form>
                 <?php else: ?>
-                    <a class="btn" href="<?= e(url('groups/index.php')) ?>">Start a flat shortlist</a>
+                    <a class="btn" href="<?= e(url('groups/index.php')) ?>">Start a household</a>
                 <?php endif; ?>
             <?php endif; ?>
             <?php if (is_logged_in() && !$isOwner && !is_admin()): ?>

@@ -80,7 +80,7 @@ require __DIR__ . '/../includes/header.php';
     <div class="page-head">
         <div>
             <h1>Requests and matches</h1>
-            <p class="muted">Accept a request to match. Matches can chat. <a href="<?= e(url('groups/index.php')) ?>">Flat shortlists →</a> · <a href="<?= e(url('communities/index.php')) ?>">Communities →</a></p>
+            <p class="muted">Accept a request to match. Matches can chat. <a href="<?= e(url('groups/index.php')) ?>">Households →</a> · <a href="<?= e(url('communities/index.php')) ?>">Communities →</a></p>
         </div>
         <a class="btn btn-primary" href="<?= e(url('swipe/swipe.php')) ?>">Find more people</a>
     </div>

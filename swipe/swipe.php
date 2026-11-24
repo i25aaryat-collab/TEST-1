@@ -18,6 +18,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/compatibility.php';
 require_once __DIR__ . '/../communities/community_helpers.php';
+require_once __DIR__ . '/../groups/group_helpers.php';
 
 $me   = require_profile();
 $myId = (int) $_SESSION['user_id'];
@@ -47,6 +48,7 @@ $sql = "SELECT u.id AS uid, u.name, p.*,
         FROM users u
         JOIN profiles p ON p.user_id = u.id
         WHERE u.role = 'user' AND u.id <> ? AND (? = 'any' OR p.city = ?)
+          AND p.looking = 1                                   -- settled households have found their people
           AND u.id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ? AND direction = 'pass')
           AND u.id NOT IN (SELECT swiper_id FROM swipes WHERE swiped_id = ? AND direction = 'like'
                            AND swiper_id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ?))
@@ -115,6 +117,14 @@ require __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container">
+    <?php if (isset($me['looking']) && (int) $me['looking'] === 0 && ($hh = my_settled_household($pdo, $myId))): ?>
+        <div class="card household-status is-settled settled-note">
+            <div class="grow"><strong>You've found your people in <a href="<?= e(url('groups/view.php?id=' . (int) $hh['id'])) ?>"><?= e($hh['name']) ?></a>.</strong>
+                <div class="muted small">You're hidden from Discover, so nobody new will send you requests. You can still browse.</div></div>
+            <form method="post" action="<?= e(url('groups/action.php')) ?>"><?= csrf_field() ?><input type="hidden" name="group_id" value="<?= (int) $hh['id'] ?>">
+                <button class="btn btn-ghost btn-sm" name="action" value="unsettle">Start looking again</button></form>
+        </div>
+    <?php endif; ?>
     <div class="page-head">
         <div>
             <h1>Your matches <?= $anyCity ? 'in every city' : 'in ' . e($city) ?></h1>
@@ -222,7 +232,7 @@ require __DIR__ . '/../includes/header.php';
                                 <img class="avatar avatar-md" src="<?= e(photo_url($c['photo'])) ?>" alt="">
                                 <div class="result-who">
                                     <h2><a href="<?= e(url('profile/view_profile.php?id=' . (int) $c['uid'])) ?>"><?= e($first) ?>, <?= (int) $c['age'] ?></a></h2>
-                                    <p class="muted small"><?= $anyCity ? e($c['city']) . ' · ' : '' ?><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?><?= stay_label($c) !== '' ? ' · stays ' . e(stay_label($c)) : '' ?></p>
+                                    <p class="muted small"><?= $anyCity ? e($c['city']) . ' · ' : '' ?><?= gender_label($c) !== '' ? e(gender_label($c)) . ' · ' : '' ?><?= e(rupees((int) $c['budget_min'])) ?>–<?= e(rupees((int) $c['budget_max'])) ?><?= stay_label($c) !== '' ? ' · stays ' . e(stay_label($c)) : '' ?><?= flatmates_label($c) !== '' ? ' · wants ' . e(strtolower(flatmates_label($c))) : '' ?></p>
                                 </div>
                                 <?= score_ring($c['score']) ?>
                             </div>

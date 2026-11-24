@@ -1,7 +1,7 @@
 <?php
 /**
  * groups/view.php  —  Owner: M4
- * One shortlist: members, saved flats and the "visit first" poll.
+ * One household: members, how full it is, saved flats, the "visit first" poll, and settling it.
  * The tally is shown only here, and only to members (checked by my_group()).
  */
 require_once __DIR__ . '/../config/db.php';
@@ -11,11 +11,15 @@ require_once __DIR__ . '/group_helpers.php';
 require_profile();
 $myId = (int) $_SESSION['user_id'];
 $group = my_group($pdo, (int) ($_GET['id'] ?? 0), $myId);
-if (!$group) { set_flash('error', 'That shortlist does not exist or you are not in it.'); redirect('groups/index.php'); }
+if (!$group) { set_flash('error', 'That household does not exist or you are not in it.'); redirect('groups/index.php'); }
 $gid = (int) $group['id'];
 
-$m = $pdo->prepare('SELECT u.id, u.name FROM group_members g JOIN users u ON u.id = g.user_id WHERE g.group_id = ? ORDER BY u.name');
-$m->execute([$gid]); $members = array_column($m->fetchAll(), 'name', 'id');
+$m = $pdo->prepare('SELECT u.id, u.name, p.flatmates FROM group_members g JOIN users u ON u.id = g.user_id LEFT JOIN profiles p ON p.user_id = u.id WHERE g.group_id = ? ORDER BY u.name');
+$m->execute([$gid]); $memberRows = $m->fetchAll(); $members = array_column($memberRows, 'name', 'id');
+// How big this household wants to be: what I said in my profile (+ me), else the largest anyone asked for
+$mine = array_values(array_filter($memberRows, fn($r) => (int) $r['id'] === $myId))[0]['flatmates'] ?? null;
+$wanted = $mine ? (int) $mine + 1 : (max(array_map(fn($r) => (int) $r['flatmates'], $memberRows)) + 1);
+$full = $wanted > 1 && count($members) >= $wanted;
 
 $f = $pdo->prepare('SELECT l.*, (SELECT COUNT(*) FROM poll_votes v WHERE v.group_id = s.group_id AND v.listing_id = l.id) AS votes
                     FROM shortlist s JOIN listings l ON l.id = s.listing_id WHERE s.group_id = ? ORDER BY votes DESC, l.rent');
@@ -31,12 +35,38 @@ require __DIR__ . '/../includes/header.php';
 <div class="container container-narrow">
     <div class="page-head">
         <div><h1><?= e($group['name']) ?></h1><p class="muted">With <?= e(implode(', ', array_map(fn($n) => explode(' ', $n)[0], $members))) ?> · private to this group</p></div>
-        <a class="btn" href="<?= e(url('groups/index.php')) ?>">All shortlists</a>
+        <a class="btn" href="<?= e(url('groups/index.php')) ?>">All households</a>
+    </div>
+
+    <div class="card household-status <?= $group['settled_at'] ? 'is-settled' : ($full ? 'is-full' : '') ?>">
+        <div class="hh-seats" aria-label="<?= count($members) ?> of <?= $wanted ?> people">
+            <?php for ($i = 0; $i < max($wanted, count($members)); $i++): ?><span class="<?= $i < count($members) ? 'on' : '' ?>"></span><?php endfor; ?>
+        </div>
+        <div class="grow">
+            <?php if ($group['settled_at']): ?>
+                <strong>Settled. You've found your people.</strong>
+                <div class="muted small">Since <?= e(nice_date($group['settled_at'])) ?>. Nobody here shows up in Discover, and new requests stop.</div>
+            <?php elseif ($full): ?>
+                <strong>Your household is complete: <?= count($members) ?> of <?= $wanted ?>.</strong>
+                <div class="muted small">Found your people? Settle the household and everyone stops showing up in Discover.</div>
+            <?php else: ?>
+                <strong><?= count($members) ?> of <?= $wanted ?> people</strong>
+                <div class="muted small"><?= $mine ? 'You said you want to live with ' . strtolower(flatmates_label((int) $mine)) . '.' : 'Set how many people you want to live with in your profile.' ?> Keep looking, or settle early if you're happy as you are.</div>
+            <?php endif; ?>
+        </div>
+        <form method="post" action="<?= e(url('groups/action.php')) ?>"><?= csrf_field() ?>
+            <input type="hidden" name="group_id" value="<?= $gid ?>">
+            <?php if ($group['settled_at']): ?>
+                <button class="btn btn-ghost btn-sm" name="action" value="unsettle">Start looking again</button>
+            <?php else: ?>
+                <button class="btn <?= $full ? 'btn-primary' : 'btn-ghost' ?> btn-sm" name="action" value="settle">We've found our people</button>
+            <?php endif; ?>
+        </form>
     </div>
 
     <?php if (!$flats): ?>
         <div class="card empty-state"><div class="empty-icon"><?= house_icon() ?></div><h2>No flats saved yet</h2>
-            <p>Open any flat and use "Save to shortlist".</p>
+            <p>Open any flat and use "Save to household".</p>
             <a class="btn btn-primary" href="<?= e(url('listings/index.php')) ?>">Browse flats</a></div>
     <?php else: ?>
         <?php if ($group['poll_open']): ?><h2 class="section-title">Which flat should we visit first?</h2><p class="muted small">One vote each. Change it any time.</p><?php endif; ?>
