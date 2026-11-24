@@ -89,6 +89,12 @@ function notification_counts(PDO $pdo, int $myId): array
          AND swiper_id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ?)) AS requests");
     $stmt->execute([$myId, $myId, $myId, $myId, $myId]);
     $counts = $stmt->fetch() ?: ['unread' => 0, 'requests' => 0];
+    // People asking for the exact location of one of my flats also count as requests waiting
+    try {
+        $loc = $pdo->prepare("SELECT COUNT(*) FROM location_requests r JOIN listings l ON l.id = r.listing_id WHERE l.user_id = ? AND r.status = 'pending'");
+        $loc->execute([$myId]);
+        $counts['requests'] += (int) $loc->fetchColumn();
+    } catch (PDOException $e) { /* table not created yet: nothing waiting */ }
     return ['unread' => (int) $counts['unread'], 'requests' => (int) $counts['requests']];
 }
 

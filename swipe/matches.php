@@ -12,6 +12,18 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/compatibility.php';
 
 $me = require_profile();
+require_once __DIR__ . '/../listings/listing_helpers.php';
+
+// People asking for the exact location of my flats (answered here or on the flat page)
+$locAsks = [];
+try {
+    $s = $pdo->prepare("SELECT r.id, r.created_at, l.id AS listing_id, l.title, l.area, u.id AS uid, u.name, p.photo, p.answers, p.age, p.stay
+                        FROM location_requests r JOIN listings l ON l.id = r.listing_id JOIN users u ON u.id = r.requester_id
+                        LEFT JOIN profiles p ON p.user_id = u.id
+                        WHERE l.user_id = ? AND r.status = 'pending' ORDER BY r.created_at DESC");
+    $s->execute([$_SESSION['user_id']]);
+    $locAsks = $s->fetchAll();
+} catch (PDOException $e) { /* table not created yet */ }
 $myId = (int) $_SESSION['user_id'];
 
 $search = trim($_GET['q'] ?? '');
@@ -89,6 +101,30 @@ require __DIR__ . '/../includes/header.php';
                             <button type="button" class="btn btn-primary btn-sm js-accept">Accept</button>
                             <button type="button" class="btn btn-ghost btn-sm js-decline">Decline</button>
                         </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($locAsks): ?>
+        <section class="card requests" aria-labelledby="loc-title">
+            <h2 id="loc-title">Asking for your flat's exact location <span class="count-pill"><?= count($locAsks) ?></span></h2>
+            <p class="muted small">They only see the approximate area until you share. Sharing also shows them Street View.</p>
+            <ul class="request-list">
+                <?php foreach ($locAsks as $q): $qs = $q['answers'] !== null ? compatibility_score($me, $q) : null; ?>
+                    <li class="request-item">
+                        <img class="avatar" src="<?= e(photo_url($q['photo'])) ?>" alt="">
+                        <div class="grow">
+                            <a href="<?= e(url('profile/view_profile.php?id=' . (int) $q['uid'])) ?>"><strong><?= e($q['name']) ?><?= $q['age'] ? ', ' . (int) $q['age'] : '' ?></strong></a>
+                            <div class="muted small">for <a href="<?= e(url('listings/view.php?id=' . (int) $q['listing_id'])) ?>"><?= e($q['title']) ?></a> · asked <?= e(nice_date($q['created_at'])) ?></div>
+                        </div>
+                        <span class="score <?= score_class($qs) ?>"><?= $qs === null ? 'Not enough answers' : $qs . '%' ?></span>
+                        <form method="post" action="<?= e(url('listings/location_request.php')) ?>" class="btn-row"><?= csrf_field() ?>
+                            <input type="hidden" name="listing_id" value="<?= (int) $q['listing_id'] ?>"><input type="hidden" name="request_id" value="<?= (int) $q['id'] ?>"><input type="hidden" name="back" value="matches">
+                            <button class="btn btn-primary btn-sm" name="action" value="approve">Share location</button>
+                            <button class="btn btn-ghost btn-sm" name="action" value="decline">Not now</button>
+                        </form>
                     </li>
                 <?php endforeach; ?>
             </ul>
