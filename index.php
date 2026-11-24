@@ -28,7 +28,7 @@ $stats = $pdo->query("
 ")->fetch();
 
 // Two real rooms for the "Flats" feature
-$rooms = $pdo->query("SELECT id, title, area, city, rent, room_type FROM listings WHERE status = 'open' AND user_id NOT IN (SELECT id FROM users WHERE email = 'listings@roomiematch.test') ORDER BY created_at DESC LIMIT 2")->fetchAll();
+$rooms = $pdo->query("SELECT id, title, area, city, rent, room_type, photo FROM listings WHERE status = 'open' AND user_id NOT IN (SELECT id FROM users WHERE email = 'listings@roomiematch.test') ORDER BY created_at DESC LIMIT 2")->fetchAll();
 
 // Main button depends on who is visiting
 if (!is_logged_in())    { $ctaUrl = url('auth/register.php');   $ctaText = 'Take the compatibility test'; }
@@ -159,7 +159,7 @@ function clip(string $id, string $class = ''): string
         <div class="feature-demo demo-flats">
             <?php foreach ($rooms as $k => $r): ?>
                 <a class="card demo-room" style="--k: <?= $k ?>" href="<?= e(url('listings/view.php?id=' . (int) $r['id'])) ?>">
-                    <span class="demo-room-pic"><?= house_icon() ?></span>
+                    <span class="demo-room-pic"><?php if (!empty($r['photo'])): ?><img src="<?= e(photo_url($r['photo'])) ?>" alt="" loading="lazy" decoding="async"><?php else: ?><?= house_icon() ?><?php endif; ?></span>
                     <span class="listing-price"><?= $r['rent'] ? e(rupees((int) $r['rent'])) . '<small>/month</small>' : 'Rent on request' ?></span>
                     <strong><?= e($r['title']) ?></strong>
                     <span class="muted small"><?= e($r['area']) ?>, <?= e($r['city']) ?></span>

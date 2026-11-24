@@ -1145,3 +1145,6 @@ html:not([data-theme="dark"]) .fyp-backdrop {
     filter: blur(20px); inset: -5%; transform: none;
 }
 html:not([data-theme="dark"]) .fyp { background: #1d120d; }
+.demo-room-pic { position: relative; overflow: hidden; }
+.demo-room-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+[data-theme="dark"] .demo-room-pic { background: linear-gradient(135deg, #2a2230, #1f2433); }
