@@ -205,3 +205,29 @@ const RMMap = (function () {
     return { create, search, reverse, INDORE };
 })();
 window.RMMap = RMMap;
+
+/* Flat page: street-level photos from Mapillary (free). Finds the photo nearest the flat
+   within about 300 m and opens it in the MapillaryJS viewer; says so if there is none. */
+(function () {
+    var box = document.getElementById('mly-view');
+    if (!box) return;
+    var lat = parseFloat(box.dataset.lat), lng = parseFloat(box.dataset.lng), token = box.dataset.token, d = 0.003;
+    var msg = function (t) { box.innerHTML = '<p class="muted small sv-msg">' + t + '</p>'; };
+    var url = 'https://graph.mapillary.com/images?access_token=' + encodeURIComponent(token) + '&fields=id,computed_geometry&limit=20&bbox='
+            + [lng - d, lat - d, lng + d, lat + d].join(',');
+    fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+        var best = null, bestD = Infinity;
+        (j.data || []).forEach(function (im) {
+            var c = (im.computed_geometry || {}).coordinates; if (!c) return;
+            var dd = Math.pow(c[0] - lng, 2) + Math.pow(c[1] - lat, 2);
+            if (dd < bestD) { bestD = dd; best = im.id; }
+        });
+        if (!best) return msg('No street-level photos near this flat yet. Try the links below.');
+        var css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css';
+        document.head.appendChild(css);
+        var s = document.createElement('script'); s.src = 'https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js';
+        s.onload = function () { box.innerHTML = ''; new mapillary.Viewer({ accessToken: token, container: box, imageId: best }); };
+        s.onerror = function () { msg('Street view could not load. Try the links below.'); };
+        document.head.appendChild(s);
+    }).catch(function () { msg('Street view could not load. Try the links below.'); });
+})();

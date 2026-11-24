@@ -1257,3 +1257,5 @@ html:not([data-theme="dark"]) .fyp-stage {
 .choice-pill input:checked + span { background: var(--coral); border-color: var(--coral); color: #fff; }
 .choice-pill input:focus-visible + span { outline: 2px solid var(--coral); outline-offset: 2px; }
 .choice-pills.is-invalid span { border-color: var(--red); }
+#mly-view { position: relative; background: var(--field); display: grid; place-items: center; overflow: hidden; }
+.street-view-box .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
