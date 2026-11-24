@@ -1175,3 +1175,11 @@ html:not([data-theme="dark"]) .fyp-stage {
 .map-item .map-card { width: 100%; min-width: 0; }
 .map-item .map-card > div { flex: 1 1 auto; min-width: 0; }
 .map-card .map-score { margin-left: 4px; }
+
+/* Flat page: show the whole photo (no cropping), on a soft blurred copy of itself */
+.listing-hero:has(img) { height: auto; max-height: none; display: block; background: #111; }
+.listing-hero:has(img) img { display: block; width: 100%; height: auto; max-height: 72vh; object-fit: contain; position: relative; z-index: 1; }
+.listing-hero .hero-blur { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(24px) brightness(.55); z-index: 0; }
+.listing-hero .photo-note { z-index: 2; }
+.listing-map { height: 280px; }
+.flat-pin { display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; background: var(--coral); border: 3px solid #fff; transform: translate(-50%, -100%) rotate(-45deg); box-shadow: 0 3px 8px rgba(0,0,0,.3); }

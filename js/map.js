@@ -192,6 +192,16 @@ const RMMap = (function () {
     }
     document.querySelectorAll('.loc-picker').forEach(wirePicker);
 
+    // ---------- A flat's own page: exact pin (owner / matched) or a circle over the rough area ----------
+    const lm = document.getElementById('listing-map');
+    if (lm) {
+        const a = +lm.dataset.lat, b = +lm.dataset.lng, exact = lm.dataset.exact === '1';
+        const m = create(lm, a, b, exact ? 15 : 14);
+        if (exact) m.marker(a, b, '<span class="flat-pin" aria-hidden="true"></span>');
+        else m.circle(a, b, 700);
+        setTimeout(() => m.resize(), 60);
+    }
+
     return { create, search, reverse, INDORE };
 })();
 window.RMMap = RMMap;
