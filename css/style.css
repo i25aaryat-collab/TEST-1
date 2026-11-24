@@ -1153,3 +1153,15 @@ html:not([data-theme="dark"]) .fyp-stage {
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 74%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 8%, #000 93%, transparent 100%);
             mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 74%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 8%, #000 93%, transparent 100%);
 }
+
+/* Location picker: search box first, suggestions as you type */
+.loc-searchbox { position: relative; margin-bottom: 8px; }
+.loc-searchbox .loc-search { width: 100%; padding-left: 38px;
+  background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239a9aa8' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l4 4'/%3E%3C/svg%3E") no-repeat 13px center; }
+.loc-searchbox .loc-results { top: calc(100% + 4px); max-height: 300px; overflow-y: auto; }
+.loc-results li { display: grid; gap: 2px; }
+.loc-results li strong { font-size: .9rem; color: var(--navy); }
+.loc-results li span { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.loc-results li[aria-selected="true"] { background: var(--field); }
+.loc-results .loc-note { cursor: default; color: var(--muted); }
+.loc-panel { margin-top: 10px; }
