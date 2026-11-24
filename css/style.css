@@ -1168,3 +1168,10 @@ html:not([data-theme="dark"]) .fyp-stage {
 /* Suggestions sit above the map (Leaflet panes use z-index up to 1000) */
 .loc-searchbox { z-index: 1100; }
 .loc-searchbox .loc-results { z-index: 1100; }
+
+/* Map side list: every card the full width of the column, same spacing */
+#map-items { display: grid; gap: 10px; }
+.map-item { display: block; width: 100%; box-sizing: border-box; text-align: left; margin: 0; }
+.map-item .map-card { width: 100%; min-width: 0; }
+.map-item .map-card > div { flex: 1 1 auto; min-width: 0; }
+.map-card .map-score { margin-left: 4px; }
