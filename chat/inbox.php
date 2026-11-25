@@ -15,7 +15,7 @@ $myId = (int) $_SESSION['user_id'];
 // For each match: the other person, plus the newest message (if any)
 $stmt = $pdo->prepare("
     SELECT m.id AS match_id, m.created_at AS matched_at,
-           u.name, p.photo,
+           u.id AS other_id, u.name, p.photo,
            lm.body AS last_body, lm.kind AS last_kind, lm.sender_id AS last_sender, lm.created_at AS last_time,
            (SELECT COUNT(*) FROM messages un WHERE un.match_id = m.id AND un.sender_id <> ? AND un.read_at IS NULL) AS unread
     FROM matches m
@@ -61,7 +61,11 @@ require __DIR__ . '/../includes/header.php';
                                     <?php if ($c['last_body'] === null): ?>
                                         <em>New match! Say hello 👋</em>
                                     <?php else: ?>
-                                        <?= (int) $c['last_sender'] === $myId ? 'You: ' : '' ?><?= e(message_preview($c['last_kind'], $c['last_body'])) ?>
+                                        <?php if ($c['last_kind'] === 'text' && str_starts_with($c['last_body'], 'e2e:1:')): ?>
+                                            <span data-e2e="<?= e($c['last_body']) ?>" data-match="<?= (int) $c['match_id'] ?>" data-other="<?= (int) $c['other_id'] ?>" data-prefix="<?= (int) $c['last_sender'] === $myId ? 'You: ' : '' ?>"><?= (int) $c['last_sender'] === $myId ? 'You: ' : '' ?>Encrypted message</span>
+                                        <?php else: ?>
+                                            <?= (int) $c['last_sender'] === $myId ? 'You: ' : '' ?><?= e(message_preview($c['last_kind'], $c['last_body'])) ?>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>

@@ -68,6 +68,7 @@ require __DIR__ . '/includes/header.php';
     <ul>
         <li>Your account, profile, answers and posts: until you delete your account.</li>
         <li>Chat messages: until either person unmatches (the whole chat is deleted) or one of you deletes their account.</li>
+        <li>One-to-one chats are end-to-end encrypted: messages are locked on your device before they are sent, and only you and the person you are talking to can read them. We store only the scrambled text. If you report a message, your device sends us a copy of that one message so our admins can review it. Community group chats are not end-to-end encrypted.</li>
         <li>Failed login records: cleared when you next log in successfully, and only the last <?= (int) LOCKOUT_MINUTES ?> minutes are ever checked.</li>
         <li>Login sessions: end when you log out or close the browser; old ones are cleared automatically.</li>
         <li>Place-search answers: kept up to 30 days as a cache, without any link to who searched.</li>
