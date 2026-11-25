@@ -67,6 +67,7 @@ require __DIR__ . '/../includes/header.php';
                 <strong><?= e($match['other_name']) ?></strong>
                 <span class="small live-dot">Live chat</span>
             </div>
+            <button type="button" class="btn btn-ghost btn-sm icon-btn js-safety-open" aria-label="Safety tips" title="Safety tips"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2.5 5 5.2v5.6c0 4.5 3 8.4 7 9.7 4-1.3 7-5.2 7-9.7V5.2l-7-2.7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
             <a class="btn btn-ghost btn-sm" href="<?= e(url('profile/view_profile.php?id=' . (int) $match['other_id'])) ?>">Profile</a>
             <form method="post" action="<?= e(url('chat/unmatch.php')) ?>"
                   data-confirm="Unmatch <?= e($firstName) ?>? The chat and all its messages will be deleted for both of you."
@@ -78,6 +79,7 @@ require __DIR__ . '/../includes/header.php';
         </div>
 
         <?php require __DIR__ . '/_connection_panel.php'; ?>
+        <?php require __DIR__ . '/../includes/_chat_safety.php'; ?>
 
         <!-- Messages: drawn by PHP first, then kept up to date by JavaScript -->
         <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Messages">
@@ -410,4 +412,5 @@ poll();
 setInterval(poll, 1500);
 </script>
 HTML;
+$extraScripts .= '<script src="' . e(url('js/chat-safety.js')) . '?v=1" defer></script>';
 require __DIR__ . '/../includes/footer.php';

@@ -11,7 +11,7 @@
 
 <footer class="site-footer">
     <div class="container footer-inner">
-        <p class="muted">© <?= date('Y') ?> RoomieMatch. All rights reserved. · <a href="<?= e(url('privacy.php')) ?>">Privacy policy</a></p>
+        <p class="muted">© <?= date('Y') ?> RoomieMatch. All rights reserved. · <a href="<?= e(url('safety.php')) ?>">Safety tips</a> · <a href="<?= e(url('privacy.php')) ?>">Privacy policy</a></p>
     </div>
 </footer>
 

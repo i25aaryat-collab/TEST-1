@@ -102,8 +102,10 @@ require __DIR__ . '/../includes/header.php';
                 <strong><?= e($c['name']) ?></strong>
                 <span class="small muted"><?= $members ?> member<?= $members === 1 ? '' : 's' ?> · group chat</span>
             </div>
+            <button type="button" class="btn btn-ghost btn-sm icon-btn js-safety-open" aria-label="Safety tips" title="Safety tips"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2.5 5 5.2v5.6c0 4.5 3 8.4 7 9.7 4-1.3 7-5.2 7-9.7V5.2l-7-2.7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
         </div>
 
+        <?php require __DIR__ . '/../includes/_chat_safety.php'; ?>
         <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Messages"></div>
 
         <div class="picker" id="picker" hidden>
@@ -235,4 +237,5 @@ $extraScripts = <<<HTML
 })();
 </script>
 HTML;
+$extraScripts .= '<script src="' . e(url('js/chat-safety.js')) . '?v=1" defer></script>';
 require __DIR__ . '/../includes/footer.php';
