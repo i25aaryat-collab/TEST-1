@@ -65,8 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)');
-            $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
+            // referred_by: the friend whose flatmate-type link brought them here (type.php)
+            $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, referred_by) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $_SESSION['ref_by'] ?? null]);
+            unset($_SESSION['ref_by']);
 
             // Log the new user straight in
             session_regenerate_id(true);

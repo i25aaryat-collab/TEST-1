@@ -74,6 +74,7 @@ require __DIR__ . '/../includes/header.php';
             <div class="btn-row">
                 <?php if ($isOwn): ?>
                     <a class="btn btn-primary" href="<?= e(url('profile/edit_profile.php')) ?>">Edit profile</a>
+                    <a class="btn" href="<?= e(url('profile/my_type.php')) ?>">My flatmate type</a>
                 <?php elseif ($matchId): ?>
                     <a class="btn btn-primary" href="<?= e(url('chat/conversation.php?match_id=' . $matchId)) ?>">Chat</a>
                 <?php endif; ?>
