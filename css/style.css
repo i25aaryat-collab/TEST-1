@@ -1316,25 +1316,13 @@ html[data-theme="dark"] .safety-shield { fill: #6B5640; }
 @keyframes safetyIn { from { opacity: 0; transform: translateY(-4px); } }
 .icon-btn { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; }
 
-.safety-nudge { margin: 0 12px 8px; padding: 10px 12px 10px 14px; border-radius: 14px 14px 14px 4px; background: #FBF4E8; color: #5B4A3A;
-  font-size: .84rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; animation: safetyIn .3s var(--ease-out) both; }
-.safety-nudge[hidden] { display: none; }
-.safety-nudge p { margin: 0; flex: 1; min-width: 180px; }
-.safety-nudge strong { color: #3E2F22; }
-.safety-nudge .btn-row { gap: 6px; }
-html[data-theme="dark"] .safety-nudge { background: #2A241D; color: #CDBBA6; }
-html[data-theme="dark"] .safety-nudge strong { color: #F0E2CF; }
-
-.bubble-row.has-flag { align-content: flex-start; }
-.safety-flag { flex-basis: 100%; margin: 4px 0 2px 6px; font-size: .74rem; font-style: italic; color: #A0643B; max-width: 75%; }
-html[data-theme="dark"] .safety-flag { color: #E7B17E; }
 
 /* Safety page */
 .safety-page { max-width: 980px; padding-top: 24px; padding-bottom: 48px; }
 .safety-hero { max-width: 640px; margin: 12px 0 28px; }
 .safety-hero .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; font-weight: 700; color: #A0643B; margin: 0 0 8px; }
 .safety-hero h1 { font-size: clamp(1.8rem, 4.4vw, 2.7rem); letter-spacing: -.03em; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
-.safety-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.safety-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 680px) { .safety-grid { grid-template-columns: 1fr; } }
 .safety-tip { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 22px 22px 20px; }
 .safety-tip svg { width: 34px; height: 34px; padding: 6px; border-radius: 11px; background: #FBF4E8; fill: none; stroke: #A0643B; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 12px; }
