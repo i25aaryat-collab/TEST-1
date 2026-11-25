@@ -75,7 +75,13 @@ require __DIR__ . '/../includes/header.php';
                                  <strong><?= e(ucfirst($r['target_type'])) ?></strong>
                                  <?= $r['author'] ? 'by ' . e($r['author']) : '' ?>
                                  <span class="muted small">· reported by <?= e($r['reporter']) ?> on <?= e(nice_date($r['created_at'])) ?></span></div>
-                            <blockquote class="report-preview"><?= $r['preview'] !== null ? e(mb_strimwidth($r['preview'], 0, 160, '…')) : '<em class="muted">Already deleted</em>' ?></blockquote>
+                            <?php $encrypted = $r['target_type'] === 'message' && $r['preview'] !== null && str_starts_with($r['preview'], 'e2e:1:'); ?>
+                            <?php if ($encrypted): ?>
+                                <blockquote class="report-preview"><?= $r['evidence'] !== null ? e(mb_strimwidth($r['evidence'], 0, 300, '…')) : '<em class="muted">End-to-end encrypted, and no copy was sent with the report</em>' ?></blockquote>
+                                <?php if ($r['evidence'] !== null): ?><p class="muted small">End-to-end encrypted message: this is the text as it appeared on the reporter's device.</p><?php endif; ?>
+                            <?php else: ?>
+                                <blockquote class="report-preview"><?= $r['preview'] !== null ? e(mb_strimwidth($r['preview'], 0, 160, '…')) : '<em class="muted">Already deleted</em>' ?></blockquote>
+                            <?php endif; ?>
                             <div class="small"><strong>Reason:</strong> <?= e($r['reason']) ?></div>
                             <?php if ($r['target_type'] === 'listing' && $r['preview'] !== null): ?>
                                 <a class="small" href="<?= e(url('listings/view.php?id=' . (int) $r['target_id'])) ?>">Open listing</a>

@@ -1338,3 +1338,18 @@ html[data-theme="dark"] .safety-tip svg { background: #2A241D; stroke: #E7B17E; 
 html[data-theme="dark"] .safety-help { background: #2A241D; color: #CDBBA6; }
 html[data-theme="dark"] .safety-help h2, html[data-theme="dark"] .safety-numbers span { color: #F0E2CF; }
 @media (max-width: 720px) { .safety-help { grid-template-columns: 1fr; } }
+
+/* End-to-end encryption: status under the name, unlock bar */
+.enc-status { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+.enc-status svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; display: none; }
+.enc-status.is-on { color: var(--green); }
+.enc-status.is-on svg, .enc-status.is-locked svg { display: inline; }
+.enc-status.is-locked { color: #A0643B; }
+.e2e-unlock { margin: 0 12px 10px; padding: 12px 14px; border-radius: 14px; background: #FBF4E8; color: #5B4A3A; font-size: .84rem; }
+.e2e-unlock[hidden] { display: none; }
+.e2e-unlock p { margin: 0 0 8px; }
+.e2e-unlock strong { color: #3E2F22; }
+.e2e-unlock-row { display: flex; gap: 8px; }
+.e2e-unlock-row input { flex: 1; min-width: 0; }
+html[data-theme="dark"] .e2e-unlock { background: #2A241D; color: #CDBBA6; }
+html[data-theme="dark"] .e2e-unlock strong { color: #F0E2CF; }

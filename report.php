@@ -60,9 +60,13 @@ if (!$stmt->fetch()) {
     done(false, 'You can only report messages, listings or people you can see.', $json);
 }
 
+// An end-to-end encrypted message can't be read by admins, so the reporter's own
+// device sends the text it shows (only for the one message being reported).
+$evidence = $type === 'message' ? mb_substr(trim((string) ($_POST['evidence'] ?? '')), 0, 600) : '';
+
 try {
-    $pdo->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason) VALUES (?, ?, ?, ?)')
-        ->execute([$myId, $type, $id, $reason]);
+    $pdo->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason, evidence) VALUES (?, ?, ?, ?, ?)')
+        ->execute([$myId, $type, $id, $reason, $evidence !== '' ? $evidence : null]);
 } catch (PDOException $e) {
     if (!is_duplicate_error($e)) throw $e;
     done(false, 'You have already reported this. Our admins will look at it.', $json);

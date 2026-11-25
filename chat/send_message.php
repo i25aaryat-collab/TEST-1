@@ -59,6 +59,14 @@ if ($action === 'send') {
         finish(true, '', $matchId, $json);
     }
 
+    // End-to-end encrypted text (js/e2e.js): the server can't read it, only check its shape.
+    // The 500-character limit was checked in the sender's browser before encrypting.
+    if (str_starts_with($body, 'e2e:1:')) {
+        if (strlen($body) > 4000 || !preg_match('#^e2e:1:[A-Za-z0-9+/]+=*$#', $body)) finish(false, 'That message could not be sent.', $matchId, $json);
+        $pdo->prepare('INSERT INTO messages (match_id, sender_id, body) VALUES (?, ?, ?)')->execute([$matchId, $myId, $body]);
+        finish(true, '', $matchId, $json);
+    }
+
     $length = mb_strlen($body);
     if ($length === 0) {
         finish(false, 'Type a message first.', $matchId, $json);

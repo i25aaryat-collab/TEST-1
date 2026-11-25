@@ -56,6 +56,11 @@
     })();
 </script>
 <?php endif; ?>
+<?php if ((is_logged_in() && !is_admin()) || in_array(basename($_SERVER['SCRIPT_FILENAME'] ?? ''), ['login.php', 'register.php'], true)): ?>
+<!-- End-to-end encryption for one-to-one chats (keys made and unlocked in the browser) -->
+<script>window.RM_E2E = <?= json_encode(['keys' => url('chat/keys.php'), 'me' => is_logged_in() ? (int) $_SESSION['user_id'] : 0]) ?>;</script>
+<script src="<?= e(url('js/e2e.js')) ?>?v=1"></script>
+<?php endif; ?>
 <?= $extraScripts ?? '' ?>
 <script src="<?= e(url('js/pullcord.js')) ?>?v=1"></script>
 <script>

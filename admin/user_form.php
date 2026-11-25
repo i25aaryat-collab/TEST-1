@@ -59,7 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
         if ($user) {
             $pdo->prepare('UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?')->execute([$values['name'], $values['email'], $values['role'], $id]);
-            if ($password !== '') $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+            // a new password can't unlock their old chat keys, so those are cleared (see auth/reset.php)
+            if ($password !== '') $pdo->prepare('UPDATE users SET password_hash = ?, e2e_pub = NULL, e2e_priv = NULL, e2e_salt = NULL WHERE id = ?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
             if ($id === (int) $_SESSION['user_id']) $_SESSION['name'] = $values['name'];
             set_flash('success', $values['name'] . "'s account was updated" . ($password !== '' ? ', with a new password.' : '.'));
             redirect('admin/user_form.php?id=' . $id);

@@ -65,7 +65,7 @@ require __DIR__ . '/../includes/header.php';
             <img class="avatar" src="<?= e(photo_url($match['other_photo'])) ?>" alt="">
             <div class="who">
                 <strong><?= e($match['other_name']) ?></strong>
-                <span class="small live-dot">Live chat</span>
+                <span class="small enc-status" id="enc-status"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.2"/><path d="M9 10.5V8a3 3 0 0 1 6 0v2.5"/></svg><span>Live chat</span></span>
             </div>
             <button type="button" class="btn btn-ghost btn-sm icon-btn js-safety-open" aria-label="Safety tips" title="Safety tips"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2.5 5 5.2v5.6c0 4.5 3 8.4 7 9.7 4-1.3 7-5.2 7-9.7V5.2l-7-2.7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
             <a class="btn btn-ghost btn-sm" href="<?= e(url('profile/view_profile.php?id=' . (int) $match['other_id'])) ?>">Profile</a>
@@ -89,7 +89,7 @@ require __DIR__ . '/../includes/header.php';
             <?php foreach ($messages as $m): ?>
                 <div class="bubble-row<?= $m['mine'] ? ' mine' : '' ?>">
                     <?php if ($m['kind'] === 'text'): ?>
-                        <div class="bubble"><?= e($m['body']) ?><span class="bubble-time"><?= e($m['time']) ?></span></div>
+                        <div class="bubble"><?= str_starts_with($m['body'], 'e2e:1:') ? '<span class="muted">Unlocking…</span>' : e($m['body']) ?><span class="bubble-time"><?= e($m['time']) ?></span></div>
                     <?php else: ?>
                         <img class="chat-media chat-<?= e($m['kind']) ?>" src="<?= e($m['kind'] === 'gif' ? url('css/gifs/' . $m['body'] . '.svg') : sticker_src($m['body'])) ?>" alt="<?= e($m['kind']) ?>">
                     <?php endif; ?>
@@ -131,6 +131,15 @@ require __DIR__ . '/../includes/header.php';
         </div>
 
         <!-- New message -->
+        <form class="e2e-unlock" id="e2e-unlock" hidden>
+            <p><strong>Unlock your encrypted chats on this device.</strong> Your messages are end-to-end encrypted. Type your password once and this browser remembers.</p>
+            <div class="e2e-unlock-row">
+                <label class="sr-only" for="e2e-pass">Password</label>
+                <input type="password" id="e2e-pass" autocomplete="current-password" placeholder="Your RoomieMatch password" required>
+                <button class="btn btn-primary btn-sm">Unlock</button>
+            </div>
+            <div class="field-error" id="e2e-err"></div>
+        </form>
         <form class="chat-form" id="chat-form" method="post" action="<?= e(url('chat/send_message.php')) ?>" novalidate>
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="send">
@@ -157,18 +166,58 @@ $stickerMap = json_encode(array_combine(STICKER_IDS, array_map('sticker_src', ST
 $reactUrl  = json_encode(url('chat/react.php'));
 $typingUrl = json_encode(url('chat/typing.php'));
 $emojiJs   = json_encode(url('js/emoji-data.js'));
+$otherId   = (int) $match['other_id'];
 $reactions = json_encode(REACTIONS);
 $name      = json_encode($firstName);
 $extraScripts = <<<HTML
 <script>
 /* ---------- Live chat (M5) ---------- */
 const POLL_URL = $pollUrl, SEND_URL = $sendUrl, REPORT_URL = $reportUrl, INBOX_URL = $inboxUrl, MEDIA_URL = $mediaUrl;
-const OTHER = $name, MATCH_ID = $matchId;
+const OTHER = $name, MATCH_ID = $matchId, OTHER_ID = $otherId;
 const STICKERS = $stickerMap, REACT_URL = $reactUrl, TYPING_URL = $typingUrl, EMOJI_JS = $emojiJs, REACTIONS = $reactions;
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const box = document.getElementById('chat-messages');
 const form = document.getElementById('chat-form');
 let lastSignature = '';
+
+/* ---------- End-to-end encryption (js/e2e.js) ---------- */
+let E2E = { state: window.RME2E ? 'checking' : 'off' }, plainById = {};
+const encStatus = document.getElementById('enc-status'), unlockForm = document.getElementById('e2e-unlock');
+function showEncStatus() {
+    const label = { on: 'End-to-end encrypted', waiting: 'Encryption starts once ' + OTHER + ' logs in again', locked: 'Locked on this device', checking: 'Live chat', off: 'Live chat' }[E2E.state];
+    encStatus.querySelector('span').textContent = label;
+    encStatus.className = 'small enc-status is-' + E2E.state;
+    unlockForm.hidden = E2E.state !== 'locked';
+}
+function checkE2E() {
+    if (!window.RME2E) { showEncStatus(); return Promise.resolve(); }
+    return RME2E.status(OTHER_ID, MATCH_ID).then(function (s) { E2E = s; showEncStatus(); lastSignature = ''; });
+}
+/** Encrypted bodies -> text this device can read (or a short note when it can't) */
+function unlockAll(messages) {
+    if (!window.RME2E) return Promise.resolve(messages);
+    return Promise.all(messages.map(function (m) {
+        if (m.kind !== 'text' || !RME2E.isEnc(m.body)) return m;
+        return RME2E.decrypt(E2E.key, MATCH_ID, m.body).then(function (t) {
+            if (t !== null) plainById[m.id] = t;
+            return Object.assign({}, m, { body: t !== null ? t : (E2E.state === 'checking' ? 'Unlocking…' : E2E.state === 'locked' ? 'Locked: unlock below to read' : "This message can't be opened on this device") });
+        });
+    }));
+}
+/** The text to send: encrypted when both sides have keys, plain otherwise (older accounts) */
+function sealed(text) {
+    return E2E.state === 'on' ? RME2E.encrypt(E2E.key, MATCH_ID, text) : Promise.resolve(text);
+}
+unlockForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const btn = unlockForm.querySelector('button'), err = document.getElementById('e2e-err');
+    btn.disabled = true; err.textContent = '';
+    RME2E.unlock(document.getElementById('e2e-pass').value)
+        .then(function () { document.getElementById('e2e-pass').value = ''; return checkE2E(); })
+        .then(poll)
+        .catch(function (x) { err.textContent = x.message || 'Could not unlock.'; })
+        .finally(function () { btn.disabled = false; });
+});
 
 /** Draw all messages. textContent is used for text, so no message can run as HTML. */
 function render(messages) {
@@ -277,7 +326,7 @@ function poll() {
                 setTimeout(function () { window.location.href = INBOX_URL; }, 2000);
                 return;
             }
-            if (data.ok) { render(data.messages); RM.setBadge('chats', data.unread); document.getElementById('typing').hidden = !data.typing; }
+            if (data.ok) { unlockAll(data.messages).then(render); RM.setBadge('chats', data.unread); document.getElementById('typing').hidden = !data.typing; }
         })
         .catch(function () { /* offline for a moment: try again next time */ });
 }
@@ -309,7 +358,7 @@ function deleteMessage(id) {
 function reportMessage(id) {
     RM.promptBox('Report this message', 'What is wrong with it? Our admins will review it.', 'Report').then(function (reason) {
         if (reason === null) return;
-        post(REPORT_URL, { target_type: 'message', target_id: id, reason: reason }).then(function (d) { RM.toast(d.message, d.ok ? 'success' : 'error'); });
+        post(REPORT_URL, Object.assign({ target_type: 'message', target_id: id, reason: reason }, plainById[id] ? { evidence: plainById[id] } : {})).then(function (d) { RM.toast(d.message, d.ok ? 'success' : 'error'); });
     });
 }
 
@@ -327,7 +376,7 @@ form.addEventListener('submit', function (e) {
     e.preventDefault();
     const button = form.querySelector('button[type=submit]');
     button.disabled = true;
-    send({ body: form.body.value.trim() }).then(function (data) {
+    sealed(form.body.value.trim()).then(function (body) { return send({ body: body }); }).then(function (data) {
         if (data.ok) { form.body.value = ''; form.body.dispatchEvent(new Event('input')); }
     }).finally(function () { button.disabled = false; form.body.focus(); });
 });
@@ -408,7 +457,7 @@ document.addEventListener('keydown', function (e) {
 });
 
 box.scrollTop = box.scrollHeight;
-poll();
+checkE2E().then(poll);
 setInterval(poll, 1500);
 </script>
 HTML;

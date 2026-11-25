@@ -28,7 +28,9 @@ if ($reset && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         $pdo->beginTransaction();
-        $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([password_hash($password, PASSWORD_DEFAULT), $reset['user_id']]);
+        // New password: the old chat keys were locked with the old one, so they're cleared and
+        // new ones are made at the next login (older encrypted messages can't be opened again).
+        $pdo->prepare('UPDATE users SET password_hash = ?, e2e_pub = NULL, e2e_priv = NULL, e2e_salt = NULL WHERE id = ?')->execute([password_hash($password, PASSWORD_DEFAULT), $reset['user_id']]);
         $pdo->prepare('UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL')->execute([date('Y-m-d H:i:s'), $reset['user_id']]);
         $pdo->prepare('DELETE FROM login_attempts WHERE email = ?')->execute([$reset['email']]);
         $pdo->commit();
