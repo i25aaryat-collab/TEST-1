@@ -34,11 +34,17 @@ function my_groups(PDO $pdo, int $userId): array
     return $s->fetchAll();
 }
 
-/** Settle a household: everyone in it has found their people and stops showing up in Discover */
-function settle_household(PDO $pdo, int $groupId, bool $settled): void
+/** Settle a household: everyone in it has found their people and stops showing up in Discover.
+    Their open rooms are closed too (the room is taken). Returns how many rooms were closed.
+    Starting to look again does not reopen rooms: owners reopen them from the flat's edit page. */
+function settle_household(PDO $pdo, int $groupId, bool $settled): int
 {
     $pdo->prepare('UPDATE flat_groups SET settled_at = ? WHERE id = ?')->execute([$settled ? date('Y-m-d H:i:s') : null, $groupId]);
     $pdo->prepare('UPDATE profiles SET looking = ? WHERE user_id IN (SELECT user_id FROM group_members WHERE group_id = ?)')->execute([$settled ? 0 : 1, $groupId]);
+    if (!$settled) return 0;
+    $s = $pdo->prepare("UPDATE listings SET status = 'closed' WHERE status = 'open' AND user_id IN (SELECT user_id FROM group_members WHERE group_id = ?)");
+    $s->execute([$groupId]);
+    return $s->rowCount();
 }
 
 /** The settled household I'm in (for the "you've found your people" note), or null */

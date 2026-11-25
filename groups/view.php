@@ -45,10 +45,10 @@ require __DIR__ . '/../includes/header.php';
         <div class="grow">
             <?php if ($group['settled_at']): ?>
                 <strong>Settled. You've found your people.</strong>
-                <div class="muted small">Since <?= e(nice_date($group['settled_at'])) ?>. Nobody here shows up in Discover, and new requests stop.</div>
+                <div class="muted small">Since <?= e(nice_date($group['settled_at'])) ?>. Nobody here shows up in Discover, new requests stop, and your listed rooms are marked as taken.</div>
             <?php elseif ($full): ?>
                 <strong>Your household is complete: <?= count($members) ?> of <?= $wanted ?>.</strong>
-                <div class="muted small">Found your people? Settle the household and everyone stops showing up in Discover.</div>
+                <div class="muted small">Found your people? Settle the household: everyone stops showing up in Discover and your listed rooms close.</div>
             <?php else: ?>
                 <strong><?= count($members) ?> of <?= $wanted ?> people</strong>
                 <div class="muted small"><?= $mine ? 'You said you want to live with ' . strtolower(flatmates_label((int) $mine)) . '.' : 'Set how many people you want to live with in your profile.' ?> Keep looking, or settle early if you're happy as you are.</div>

@@ -129,7 +129,7 @@ require __DIR__ . '/../includes/header.php';
             <?php if ($result['same']): ?><p class="small"><?= e($result['same']) ?></p><?php endif; ?>
             <?php if ($result['discuss']): ?><p class="small">💬 <?= e($result['discuss']) ?></p><?php endif; ?>
             <div class="factor-list">
-                <?php foreach ($breakdown as $factor => $pts): $max = COMPATIBILITY_MAX[$factor]; ?>
+                <?php foreach ($breakdown as $factor => $pts): $max = COMPATIBILITY_MAX[$factor] ?? 100; ?>
                     <div class="factor">
                         <span class="name"><?= e($factor) ?></span>
                         <span class="bar"><i style="width: <?= round($pts / $max * 100) ?>%"></i></span>

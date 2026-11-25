@@ -144,6 +144,7 @@ const COMPATIBILITY_MAX = [
     'Guests and shared space' => 100,
     'Food and household practices' => 100,
     'Comfort and boundaries' => 100,
+    'How long you stay' => 100,
 ];
 
 /** CSS class for colouring a score */

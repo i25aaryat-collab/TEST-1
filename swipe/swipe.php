@@ -247,7 +247,7 @@ require __DIR__ . '/../includes/header.php';
                                 <summary>Score breakdown</summary>
                                 <table>
                                     <?php foreach ($c['breakdown'] as $factor => $pts): ?>
-                                        <tr><td><?= e($factor) ?></td><td><span class="mini-bar"><i style="width:<?= round($pts / COMPATIBILITY_MAX[$factor] * 100) ?>%"></i></span></td><td><?= round($pts) ?>%</td></tr>
+                                        <tr><td><?= e($factor) ?></td><td><span class="mini-bar"><i style="width:<?= round($pts / (COMPATIBILITY_MAX[$factor] ?? 100) * 100) ?>%"></i></span></td><td><?= round($pts) ?>%</td></tr>
                                     <?php endforeach; ?>
                                 </table>
                             </details>

@@ -43,6 +43,7 @@
 /* ---------- 2. Base and layout ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+html, body { overflow-x: clip; }      /* off-screen animation starts (cards sliding in) must never widen the page */
 body {
     margin: 0;
     font-family: var(--font);
@@ -1286,3 +1287,12 @@ html[data-theme="dark"] .household-status.is-settled { background: rgba(43, 182,
 .admin-flat-row .btn { margin-left: auto; }
 .danger-zone { margin: 8px 0 24px; text-align: right; }
 .form-card + .form-card { margin-top: 18px; }
+
+/* 404 */
+.not-found { padding: 8vh 0; text-align: center; }
+.not-found .card { padding: 40px 24px; }
+.nf-code { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 800; line-height: 1; margin: 0 0 8px; color: var(--coral); letter-spacing: -.04em; }
+.not-found .btn-row { justify-content: center; margin-top: 18px; }
+
+/* Easier to tap on phones */
+.score-why a.small, .why-modal a.small, .tq-skip { display: inline-block; padding: 5px 0; min-height: 24px; }
