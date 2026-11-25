@@ -36,6 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare('UPDATE profiles SET answers = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?')
             ->execute([json_encode($storedAnswers), $userId]);
         if ($go === 'later') { set_flash('success', 'Saved. You can finish the test any time from your profile.'); redirect('profile/view_profile.php'); }
+        // The reveal: their flatmate type (if enough was answered), then on to matches
+        require_once __DIR__ . '/../includes/flatmate_type.php';
+        if (flatmate_type(['answers' => json_encode($storedAnswers)])) redirect('profile/my_type.php?fresh=1');
         set_flash('success', 'Test saved: ' . count($answers) . ' answers. Here are your best matches.');
         redirect('swipe/swipe.php');
     }
