@@ -9,6 +9,16 @@
   },
   "routes": [
     {
+      "src": "/(.*)",
+      "headers": {
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "geolocation=(self), camera=(), microphone=()"
+      },
+      "continue": true
+    },
+    {
       "src": "^/(config|includes|database|data)/(.*)$",
       "status": 404
     },
@@ -25,7 +35,7 @@
     },
     {
       "src": "^/(.*)$",
-      "status": 404
+      "dest": "/api/index.php?__path=$1"
     }
   ]
 }

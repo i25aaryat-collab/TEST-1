@@ -98,8 +98,8 @@ if (is_logged_in() && !is_admin() && isset($pdo)) {
         <path d="M40 30h16l20 26q1 3-2 3H22q-3 0-2-3Z" fill="var(--navy)"/>
         <path class="bulb" d="M40 59a8 7 0 0 0 16 0Z" fill="#FCD34D"/>
         <path class="cord" d="" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/>
-        <path class="hit grab" d="" fill="none" stroke="transparent" stroke-width="20" style="pointer-events:stroke"/>
-        <g class="bead grab"><circle r="14" fill="transparent"/><rect x="-4" y="1" width="8" height="15" rx="4" fill="var(--navy)"/></g>
+        <path class="hit grab" d="" fill="none" stroke="transparent" stroke-width="28" style="pointer-events:stroke"/>
+        <g class="bead grab"><circle r="21" fill="transparent"/><rect x="-4" y="1" width="8" height="15" rx="4" fill="var(--navy)"/></g>
     </svg>
     <span class="hint" aria-hidden="true"></span>
 </div>

@@ -71,8 +71,9 @@ switch ($action) {
         }
         break;
     case 'settle':                                    // we've found our people: stop looking
-        settle_household($pdo, $gid, true);
-        set_flash('success', 'Congratulations! ' . $group['name'] . ' is settled. Everyone in it is now hidden from Discover.');
+        $closed = settle_household($pdo, $gid, true);
+        set_flash('success', 'Congratulations! ' . $group['name'] . ' is settled. Everyone in it is now hidden from Discover'
+            . ($closed ? ', and ' . $closed . ' room' . ($closed === 1 ? ' was' : 's were') . ' marked as taken.' : '.'));
         break;
     case 'unsettle':
         settle_household($pdo, $gid, false);
